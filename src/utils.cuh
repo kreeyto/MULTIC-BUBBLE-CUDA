@@ -1,10 +1,12 @@
 #ifndef UTILS_CUH
 #define UTILS_CUH
+#include <vector>
 
 void initializeConstants();
-void allocateMemory(float *&h_rho, float *&h_phi, float *&d_rho, float *&d_phi);
-void freeMemory(float *h_rho, float *h_phi, float *d_rho, float *d_phi);
-void copyToDevice(const float *h_rho, const float *h_phi, float *d_rho, float *d_phi);
-void initializeHostArrays(float *h_rho, float *h_phi);
+void freeMemory(float **pointers, int count);
+void computeInitialCPU(
+    std::vector<float> &phi, std::vector<float> &rho, const std::vector<float> &w, const std::vector<float> &w_g, 
+    std::vector<float> &f, std::vector<float> &g, int nx, int ny, int nz, int fpoints, int gpoints
+);
 
 #endif
