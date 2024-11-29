@@ -3,6 +3,8 @@
 #include <cuda_runtime.h>
 #include <fstream>
 #include <vector>
+#include <iomanip>
+#include <string>
 
 void freeMemory(float **pointers, int count) {
     for (int i = 0; i < count; ++i) {
@@ -40,3 +42,42 @@ void computeInitialCPU(
         }
     }
 }
+
+void generateSimulationInfoFile(const std::string& filepath, int nx, int ny, int nz, float umax, int stamp, int nsteps, float tau) {
+    try {
+        std::ofstream file(filepath);
+
+        if (!file.is_open()) {
+            std::cerr << "Erro ao abrir o arquivo: " << filepath << std::endl;
+            return;
+        }
+
+        file << "---------------------------- SIMULATION INFORMATION ----------------------------\n"
+             << "                           Simulation ID: 000\n"
+             << "                           Velocity set: D3Q19\n"
+             << "                           Precision: float\n"
+             << "                           NX: " << nx << '\n'
+             << "                           NY: " << ny << '\n'
+             << "                           NZ: " << nz << '\n'
+             << "                           NZ_TOTAL: " << nz << '\n'
+             << "                           Tau: " << tau << '\n'
+             << "                           Umax: " << umax << '\n'
+             << "                           FX: 0.000000e+00\n"
+             << "                           FY: 0.000000e+00\n"
+             << "                           FZ: 0.000000e+00\n"
+             << "                           Save steps: " << stamp << '\n'
+             << "                           Nsteps: " << nsteps << '\n'
+             << "                           MLUPS: 1.187970e+01\n"
+             << "--------------------------------------------------------------------------------\n\n"
+             << "------------------------------ BOUNDARY CONDITIONS -----------------------------\n"
+             << "                           BC mode: Moment Based \n"
+             << "                           BC type: testBC\n"
+             << "--------------------------------------------------------------------------------\n";
+
+        file.close();
+        std::cout << "Arquivo de informações da simulação criado em: " << filepath << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Erro ao gerar o arquivo de informações: " << e.what() << std::endl;
+    }
+}
+

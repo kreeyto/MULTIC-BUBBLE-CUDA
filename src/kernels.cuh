@@ -10,7 +10,7 @@ __global__ void gradCalc(
     float *phi, float *mod_grad, float *normx, float *normy, 
     float *normz, float *indicator, float *w, const float *cix, 
     const float *ciy, const float *ciz, int fpoints,
-    int nx, int ny, int nz
+    int nx, int ny, int nz, float grad_fix, float grad_fiy, float grad_fiz
 );
 
 __global__ void curvatureCalc(
@@ -28,7 +28,7 @@ __global__ void momentsCalc(
     float *pxx, float *pyy, float *pzz,
     float *pxy, float *pxz, float *pyz,
     float cssq, int nx, int ny, int nz,
-    int fpoints
+    int fpoints, float uu, float udotc, float HeF, float feq
 );
 
 __global__ void collisionCalc(
@@ -39,7 +39,7 @@ __global__ void collisionCalc(
     float *rho, float *phi, float *f, float *g, 
     float *pxx, float *pyy, float *pzz, float *pxy, float *pxz, float *pyz, 
     float cssq, float omega, float sharp_c, int fpoints, int gpoints,
-    int nx, int ny, int nz
+    int nx, int ny, int nz, float uu, float udotc, float HeF, float feq, float Hi
 );
 
 __global__ void streamingCalc(

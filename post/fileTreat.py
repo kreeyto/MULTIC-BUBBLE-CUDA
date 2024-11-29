@@ -5,7 +5,7 @@ import numpy as np
 # ALL FILES IN THE FOLDER MUST BE FROM THE SAME SIMULATION
 #PATH = "./../bin/TEST/000/"
 
-__macr_names__ = ['ux', 'uy', 'uz', 'rho','omega']
+__macr_names__ = ['ux', 'uy', 'uz', 'phi']
 # Uncomment below for IBM
 # __macr_names__ += ['fx', 'fy', 'fz']
 # Uncomment below for NNF

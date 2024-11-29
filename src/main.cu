@@ -5,18 +5,24 @@
 #include <fstream>
 #include <string>
 #include <iostream>
-#include <filesystem>
+#include <sstream> 
+#include <iomanip>   
+
 
 int main() {
     initializeConstants();
 
     // initialize storage vars
-    int stamp = 100;
+    int stamp = 1;
+    float umax = 9.000000e-04;
     std::vector<float> phi_host(nx * ny * nz);
     std::vector<float> ux_host(nx * ny * nz);
     std::vector<float> uy_host(nx * ny * nz);
     std::vector<float> uz_host(nx * ny * nz);
-    std::string output_dir = "../bin/simulation/";
+    std::string output_dir = "../bin/simulation/000/";
+    std::string info_file = "../bin/simulation/000/000_info.txt";
+
+    generateSimulationInfoFile(info_file, nx, ny, nz, umax, stamp, nsteps, tau);
 
     std::vector<float> phi(nx * ny * nz, 0.0f);
     std::vector<float> rho(nx * ny * nz, 1.0f); 
@@ -64,7 +70,7 @@ int main() {
         gradCalc<<<numBlocks, threadsPerBlock>>> (
             d_phi, d_mod_grad, d_normx, d_normy, d_normz, 
             d_indicator, d_w, d_cix, d_ciy, d_ciz, 
-            fpoints, nx, ny, nz
+            fpoints, nx, ny, nz, grad_fix, grad_fiy, grad_fiz
         );
         checkCudaErrors(cudaDeviceSynchronize());
 
@@ -84,7 +90,7 @@ int main() {
             d_pxx, d_pyy, d_pzz,
             d_pxy, d_pxz, d_pyz,
             cssq, nx, ny, nz,
-            fpoints
+            fpoints, uu, udotc, HeF, feq
         );
         checkCudaErrors(cudaDeviceSynchronize());
 
@@ -96,7 +102,7 @@ int main() {
             d_rho, d_phi, d_f, d_g, 
             d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, 
             cssq, omega, sharp_c, fpoints, gpoints,
-            nx, ny, nz
+            nx, ny, nz, uu, udotc, HeF, feq, Hi
         );
         checkCudaErrors(cudaDeviceSynchronize());
 
@@ -118,10 +124,17 @@ int main() {
 
         // save data
         if (t % stamp == 0) {
-            std::ofstream file_phi(output_dir + "phi_" + std::to_string(t) + ".bin", std::ios::binary);
-            std::ofstream file_ux(output_dir + "ux_" + std::to_string(t) + ".bin", std::ios::binary);
-            std::ofstream file_uy(output_dir + "uy_" + std::to_string(t) + ".bin", std::ios::binary);
-            std::ofstream file_uz(output_dir + "uz_" + std::to_string(t) + ".bin", std::ios::binary);
+            std::ostringstream filename_phi, filename_ux, filename_uy, filename_uz;
+
+            filename_phi << output_dir << "000_phi" << std::setw(6) << std::setfill('0') << t << ".bin";
+            filename_ux << output_dir << "000_ux" << std::setw(6) << std::setfill('0') << t << ".bin";
+            filename_uy << output_dir << "000_uy" << std::setw(6) << std::setfill('0') << t << ".bin";
+            filename_uz << output_dir << "000_uz" << std::setw(6) << std::setfill('0') << t << ".bin";  
+
+            std::ofstream file_phi(filename_phi.str(), std::ios::binary);
+            std::ofstream file_ux(filename_ux.str(), std::ios::binary);
+            std::ofstream file_uy(filename_uy.str(), std::ios::binary);
+            std::ofstream file_uz(filename_uz.str(), std::ios::binary);
 
             file_phi.write(reinterpret_cast<const char*>(phi_host.data()), phi_host.size() * sizeof(float));
             file_ux.write(reinterpret_cast<const char*>(ux_host.data()), ux_host.size() * sizeof(float));
