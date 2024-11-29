@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 
-int nx = 128, ny = 128, nz = 128, fpoints = 19, gpoints = 15, nsteps = 10000;
+int nx = 128, ny = 128, nz = 128, fpoints = 19, gpoints = 15, nsteps = 1000;
 float tau = 0.505, cssq = 1.0f / 3.0f, omega = 1.0f / tau, sharp_c = 0.45f, sigma = 0.1f;
 
 float *d_f, *d_g, *d_w, *d_w_g, *d_cix, *d_ciy, *d_ciz;
