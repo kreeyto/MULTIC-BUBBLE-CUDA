@@ -1,4 +1,4 @@
-#include "constants.cuh"
+#include "var.cuh"
 #include <cuda_runtime.h>
 #include <iostream>
 #include <vector>

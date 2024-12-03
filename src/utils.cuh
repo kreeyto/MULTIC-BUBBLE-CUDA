@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <string>
 
-void initializeConstants();
+void initializeVars();
 
 void freeMemory(float **pointers, int count);
 

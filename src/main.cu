@@ -1,6 +1,6 @@
 #include "kernels.cuh"
 #include "utils.cuh"
-#include "constants.cuh"
+#include "var.cuh"
 #include "errorDef.cuh"
 #include <fstream>
 #include <string>
@@ -10,11 +10,10 @@
 
 
 int main() {
-    initializeConstants();
+    initializeVars();
 
-    // initialize storage vars
     int stamp = 1;
-    float umax = 9.000000e-04;
+    float umax = 0.000000e+00;
     std::vector<float> phi_host(nx * ny * nz);
     std::vector<float> ux_host(nx * ny * nz);
     std::vector<float> uy_host(nx * ny * nz);
@@ -122,7 +121,6 @@ int main() {
         );
         checkCudaErrors(cudaDeviceSynchronize());
 
-        // save data
         if (t % stamp == 0) {
             std::ostringstream filename_phi, filename_ux, filename_uy, filename_uz;
 
