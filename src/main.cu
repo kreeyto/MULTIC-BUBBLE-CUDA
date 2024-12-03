@@ -12,16 +12,13 @@
 int main() {
     initializeVars();
 
-    int stamp = 1;
-    float umax = 0.000000e+00;
+    int stamp = 1, nsteps = 50;
     std::vector<float> phi_host(nx * ny * nz);
-    std::vector<float> ux_host(nx * ny * nz);
-    std::vector<float> uy_host(nx * ny * nz);
-    std::vector<float> uz_host(nx * ny * nz);
     std::string output_dir = "../bin/simulation/000/";
     std::string info_file = "../bin/simulation/000/000_info.txt";
 
-    generateSimulationInfoFile(info_file, nx, ny, nz, umax, stamp, nsteps, tau);
+    clearOutputDirectory(output_dir);
+    generateSimulationInfoFile(info_file, nx, ny, nz, stamp, nsteps, tau);
 
     std::vector<float> phi(nx * ny * nz, 0.0f);
     std::vector<float> rho(nx * ny * nz, 1.0f); 
@@ -38,7 +35,7 @@ int main() {
     std::vector<float> f(nx * ny * nz * fpoints, 0.0f);
     std::vector<float> g(nx * ny * nz * gpoints, 0.0f);
     
-    computeInitialCPU(phi, rho, w, w_g, f, g, nx, ny, nz, fpoints, gpoints);
+    computeInitialCPU(phi, rho, w, w_g, f, g, nx, ny, nz, fpoints, gpoints, res);
 
     checkCudaErrors(cudaMemcpy(d_phi, phi.data(), nx * ny * nz * sizeof(float), cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(d_rho, rho.data(), nx * ny * nz * sizeof(float), cudaMemcpyHostToDevice));
@@ -57,9 +54,6 @@ int main() {
         std::cout << "Passo " << t << " de " << nsteps << " iniciado..." << std::endl;
 
         checkCudaErrors(cudaMemcpy(phi_host.data(), d_phi, nx * ny * nz * sizeof(float), cudaMemcpyDeviceToHost));
-        checkCudaErrors(cudaMemcpy(ux_host.data(), d_ux, nx * ny * nz * sizeof(float), cudaMemcpyDeviceToHost));
-        checkCudaErrors(cudaMemcpy(uy_host.data(), d_uy, nx * ny * nz * sizeof(float), cudaMemcpyDeviceToHost));
-        checkCudaErrors(cudaMemcpy(uz_host.data(), d_uz, nx * ny * nz * sizeof(float), cudaMemcpyDeviceToHost));
 
         phiCalc<<<numBlocks, threadsPerBlock>>> (
             d_phi, d_g, gpoints, nx, ny, nz
@@ -69,7 +63,7 @@ int main() {
         gradCalc<<<numBlocks, threadsPerBlock>>> (
             d_phi, d_mod_grad, d_normx, d_normy, d_normz, 
             d_indicator, d_w, d_cix, d_ciy, d_ciz, 
-            fpoints, nx, ny, nz, grad_fix, grad_fiy, grad_fiz
+            fpoints, nx, ny, nz
         );
         checkCudaErrors(cudaDeviceSynchronize());
 
@@ -89,7 +83,7 @@ int main() {
             d_pxx, d_pyy, d_pzz,
             d_pxy, d_pxz, d_pyz,
             cssq, nx, ny, nz,
-            fpoints, uu, udotc, HeF, feq
+            fpoints, d_fneq
         );
         checkCudaErrors(cudaDeviceSynchronize());
 
@@ -101,7 +95,7 @@ int main() {
             d_rho, d_phi, d_f, d_g, 
             d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, 
             cssq, omega, sharp_c, fpoints, gpoints,
-            nx, ny, nz, uu, udotc, HeF, feq, Hi
+            nx, ny, nz
         );
         checkCudaErrors(cudaDeviceSynchronize());
 
@@ -122,27 +116,11 @@ int main() {
         checkCudaErrors(cudaDeviceSynchronize());
 
         if (t % stamp == 0) {
-            std::ostringstream filename_phi, filename_ux, filename_uy, filename_uz;
-
+            std::ostringstream filename_phi;
             filename_phi << output_dir << "000_phi" << std::setw(6) << std::setfill('0') << t << ".bin";
-            filename_ux << output_dir << "000_ux" << std::setw(6) << std::setfill('0') << t << ".bin";
-            filename_uy << output_dir << "000_uy" << std::setw(6) << std::setfill('0') << t << ".bin";
-            filename_uz << output_dir << "000_uz" << std::setw(6) << std::setfill('0') << t << ".bin";  
-
             std::ofstream file_phi(filename_phi.str(), std::ios::binary);
-            std::ofstream file_ux(filename_ux.str(), std::ios::binary);
-            std::ofstream file_uy(filename_uy.str(), std::ios::binary);
-            std::ofstream file_uz(filename_uz.str(), std::ios::binary);
-
             file_phi.write(reinterpret_cast<const char*>(phi_host.data()), phi_host.size() * sizeof(float));
-            file_ux.write(reinterpret_cast<const char*>(ux_host.data()), ux_host.size() * sizeof(float));
-            file_uy.write(reinterpret_cast<const char*>(uy_host.data()), uy_host.size() * sizeof(float));
-            file_uz.write(reinterpret_cast<const char*>(uz_host.data()), uz_host.size() * sizeof(float));
-
             file_phi.close();
-            file_ux.close();
-            file_uy.close();
-            file_uz.close();
 
             std::cout << "Passo " << t << ": Dados salvos em " << output_dir << std::endl;
         }

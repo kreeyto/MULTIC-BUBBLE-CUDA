@@ -5,6 +5,12 @@
 #include <vector>
 #include <iomanip>
 #include <string>
+#include <cstdlib>
+
+void clearOutputDirectory(const std::string& dir) {
+    std::string command = "del /Q " + dir + "\\*";
+    system(command.c_str());
+}
 
 void freeMemory(float **pointers, int count) {
     for (int i = 0; i < count; ++i) {
@@ -16,7 +22,7 @@ void freeMemory(float **pointers, int count) {
 
 void computeInitialCPU(
     std::vector<float> &phi, std::vector<float> &rho, const std::vector<float> &w, const std::vector<float> &w_g, 
-    std::vector<float> &f, std::vector<float> &g, int nx, int ny, int nz, int fpoints, int gpoints
+    std::vector<float> &f, std::vector<float> &g, int nx, int ny, int nz, int fpoints, int gpoints, float res
 ) {
     auto F_IDX = [&](int i, int j, int k, int l) {
         return i + nx * (j + ny * (k + nz * l));
@@ -30,7 +36,7 @@ void computeInitialCPU(
                     float Ri = std::sqrt((i - nx / 2.0f) * (i - nx / 2.0f) / 4.0f +
                                          (j - ny / 2.0f) * (j - ny / 2.0f) +
                                          (k - nz / 2.0f) * (k - nz / 2.0f));
-                    phi[idx] = 0.5f + 0.5f * std::tanh(2.0f * (20 - Ri) / 3.0f);
+                    phi[idx] = 0.5f + 0.5f * std::tanh(2.0f * (20 * res - Ri) / (3.0f * res));
                     for (int l = 0; l < fpoints; ++l) {
                         f[F_IDX(i, j, k, l)] = w[l] * rho[idx];
                     }
@@ -43,7 +49,7 @@ void computeInitialCPU(
     }
 }
 
-void generateSimulationInfoFile(const std::string& filepath, int nx, int ny, int nz, float umax, int stamp, int nsteps, float tau) {
+void generateSimulationInfoFile(const std::string& filepath, int nx, int ny, int nz, int stamp, int nsteps, float tau) {
     try {
         std::ofstream file(filepath);
 
@@ -61,7 +67,7 @@ void generateSimulationInfoFile(const std::string& filepath, int nx, int ny, int
              << "                           NZ: " << nz << '\n'
              << "                           NZ_TOTAL: " << nz << '\n'
              << "                           Tau: " << tau << '\n'
-             << "                           Umax: " << umax << '\n'
+             << "                           Umax: 0.000000+00\n"
              << "                           FX: 0.000000e+00\n"
              << "                           FY: 0.000000e+00\n"
              << "                           FZ: 0.000000e+00\n"

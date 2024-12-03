@@ -2,12 +2,12 @@
                            Simulation ID: 000
                            Velocity set: D3Q19
                            Precision: float
-                           NX: 128
-                           NY: 128
-                           NZ: 128
-                           NZ_TOTAL: 128
-                           Tau: 1
-                           Umax: 0
+                           NX: 150
+                           NY: 150
+                           NZ: 150
+                           NZ_TOTAL: 150
+                           Tau: 0.505
+                           Umax: 0.000000+00
                            FX: 0.000000e+00
                            FY: 0.000000e+00
                            FZ: 0.000000e+00
