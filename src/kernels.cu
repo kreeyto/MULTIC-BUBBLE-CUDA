@@ -15,6 +15,11 @@ __global__ void phiCalc(
 
     if (i > 0 && i < nx-1 && j > 0 && j < ny-1 && k > 0 && k < nz-1) {
         // phi(i,j,k) = sum(g(i,j,k,:),4);
+        float val = 0.0f;
+        for (int l = 0; l < gpoints; l++) {
+            val += g[F_IDX(i,j,k,l)];
+        }
+        phi[IDX3D(i,j,k)] = val;
     }
 }
 
@@ -129,6 +134,11 @@ __global__ void momentsCalc(
         float uu = 0.5 * (pow(ux[IDX3D(i,j,k)],2) + pow(uy[IDX3D(i,j,k)],2) + pow(uz[IDX3D(i,j,k)],2)) / cssq;
 
         // rho(i,j,k) = sum(f(i,j,k,:),4)
+        float val = 0.0f;
+        for (int l = 0; l < fpoints; l++) {
+            val += f[F_IDX(i,j,k,l)];
+        }
+        rho[IDX3D(i,j,k)] = val;
         
         for (int l = 0; l < fpoints; l++) {
             float udotc = (ux[IDX3D(i,j,k)] * cix[l] + uy[IDX3D(i,j,k)] * ciy[l] + uz[IDX3D(i,j,k)] * ciz[l]) / cssq;
