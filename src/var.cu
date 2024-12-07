@@ -14,8 +14,6 @@ float *d_curvature, *d_ffx, *d_ffy, *d_ffz;
 float *d_ux, *d_uy, *d_uz, *d_pxx, *d_pyy, *d_pzz;
 float *d_pxy, *d_pxz, *d_pyz, *d_rho, *d_phi;
 
-float *d_fneq;
-
 float *h_pxx = (float *)malloc(nx * ny * nz * sizeof(float));
 float *h_pyy = (float *)malloc(nx * ny * nz * sizeof(float));
 float *h_pzz = (float *)malloc(nx * ny * nz * sizeof(float));
@@ -71,8 +69,6 @@ void initializeVars() {
     cudaMalloc((void **)&d_ciy, vs_size);
     cudaMalloc((void **)&d_ciz, vs_size);
 
-    cudaMalloc((void **)&d_fneq, vs_size);
-
     cudaMemset(d_ux, 0, size);
     cudaMemset(d_uy, 0, size);
     cudaMemset(d_uz, 0, size);
@@ -85,8 +81,6 @@ void initializeVars() {
     cudaMemset(d_ffy, 0, size);
     cudaMemset(d_ffz, 0, size);
     cudaMemset(d_mod_grad, 0, size);
-
-    cudaMemset(d_fneq, 0, vs_size);
 
     cudaMemcpy(d_pxx, h_pxx, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_pyy, h_pyy, size, cudaMemcpyHostToDevice);

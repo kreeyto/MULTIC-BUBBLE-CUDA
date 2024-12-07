@@ -58,14 +58,14 @@ int main() {
         phiCalc<<<numBlocks, threadsPerBlock>>> (
             d_phi, d_g, gpoints, nx, ny, nz
         );
-        checkCudaErrors(cudaDeviceSynchronize());
+        cudaDeviceSynchronize();
 
         gradCalc<<<numBlocks, threadsPerBlock>>> (
             d_phi, d_mod_grad, d_normx, d_normy, d_normz, 
             d_indicator, d_w, d_cix, d_ciy, d_ciz, 
             fpoints, nx, ny, nz
         );
-        checkCudaErrors(cudaDeviceSynchronize());
+        cudaDeviceSynchronize();
 
         curvatureCalc<<<numBlocks, threadsPerBlock>>> (
             d_curvature, d_indicator, d_w,
@@ -74,7 +74,7 @@ int main() {
             d_ffx, d_ffy, d_ffz, sigma,
             fpoints, nx, ny, nz
         );
-        checkCudaErrors(cudaDeviceSynchronize());
+        cudaDeviceSynchronize();
 
         momentsCalc<<<numBlocks, threadsPerBlock>>> (
             d_ux, d_uy, d_uz, d_rho,
@@ -83,9 +83,9 @@ int main() {
             d_pxx, d_pyy, d_pzz,
             d_pxy, d_pxz, d_pyz,
             cssq, nx, ny, nz,
-            fpoints, d_fneq
+            fpoints
         );
-        checkCudaErrors(cudaDeviceSynchronize());
+        cudaDeviceSynchronize();
 
         collisionCalc<<<numBlocks, threadsPerBlock>>> (
             d_ux, d_uy, d_uz, d_w, d_w_g,
@@ -97,23 +97,23 @@ int main() {
             cssq, omega, sharp_c, fpoints, gpoints,
             nx, ny, nz
         );
-        checkCudaErrors(cudaDeviceSynchronize());
+        cudaDeviceSynchronize();
 
         streamingCalc<<<numBlocks, threadsPerBlock>>> (
             d_g, d_cix, d_ciy, d_ciz, nx, ny, nz, gpoints
         );
-        checkCudaErrors(cudaDeviceSynchronize());
+        cudaDeviceSynchronize();
 
         fgBoundaryCalc<<<numBlocks, threadsPerBlock>>> (
             d_f, d_g, d_rho, d_phi, d_w, d_w_g,
             d_cix, d_ciy, d_ciz, fpoints, gpoints, nx, ny, nz
         );
-        checkCudaErrors(cudaDeviceSynchronize());
+        cudaDeviceSynchronize();
 
         boundaryConditions<<<numBlocks, threadsPerBlock>>> (
             d_phi, nx, ny, nz
         );
-        checkCudaErrors(cudaDeviceSynchronize());
+        cudaDeviceSynchronize();
 
         if (t % stamp == 0) {
             std::ostringstream filename_phi;
