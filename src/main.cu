@@ -13,11 +13,10 @@ int main() {
     initializeVars();
 
     int stamp = 1, nsteps = 50;
-    std::vector<float> phi_host(nx * ny * nz);
+    std::vector<float> phi_host(nx * ny * nz, 0.0f);
     std::string output_dir = "../bin/simulation/000/";
     std::string info_file = "../bin/simulation/000/000_info.txt";
 
-    clearOutputDirectory(output_dir);
     generateSimulationInfoFile(info_file, nx, ny, nz, stamp, nsteps, tau);
 
     std::vector<float> phi(nx * ny * nz, 0.0f);
@@ -49,7 +48,7 @@ int main() {
                    (ny + threadsPerBlock.y - 1) / threadsPerBlock.y,
                    (nz + threadsPerBlock.z - 1) / threadsPerBlock.z);
 
-    for (int t = 0; t < nsteps; t++) {
+    for (int t = 0; t < nsteps; ++t) {
 
         std::cout << "Passo " << t << " de " << nsteps << " iniciado..." << std::endl;
 
@@ -83,7 +82,7 @@ int main() {
             d_pxx, d_pyy, d_pzz,
             d_pxy, d_pxz, d_pyz,
             cssq, nx, ny, nz,
-            fpoints
+            fpoints, d_fneq
         );
         cudaDeviceSynchronize();
 
@@ -130,7 +129,8 @@ int main() {
     float *pointers[] = {d_f, d_g, d_phi, d_rho, d_w, d_w_g, d_cix, d_ciy, d_ciz, 
                      d_mod_grad, d_normx, d_normy, d_normz, d_indicator,
                      d_curvature, d_ffx, d_ffy, d_ffz, d_ux, d_uy, d_uz,
-                     d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz};
+                     d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, d_fneq
+                     };
     freeMemory(pointers, 27);  
 
     return 0;

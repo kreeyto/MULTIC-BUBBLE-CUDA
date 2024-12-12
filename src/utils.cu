@@ -7,11 +7,6 @@
 #include <string>
 #include <cstdlib>
 
-void clearOutputDirectory(const std::string& dir) {
-    std::string command = "del /Q " + dir + "\\*";
-    system(command.c_str());
-}
-
 void freeMemory(float **pointers, int count) {
     for (int i = 0; i < count; ++i) {
         if (pointers[i] != nullptr) {
@@ -29,9 +24,9 @@ void computeInitialCPU(
         return i + nx * (j + ny * (k + nz * l));
     };
 
-    for (int i = 1; i < nz-1; i++) {
-        for (int j = 1; j < ny-1; j++) {
-            for (int k = 1; k < nx-1; k++) {
+    for (int k = 1; k < nz-1; ++k) {
+        for (int j = 1; j < ny-1; ++j) {
+            for (int i = 1; i < nx-1; ++i) {
                 int idx = i + nx * (j + ny * k);
                 float Ri = std::sqrt((i - nx / 2.0f) * (i - nx / 2.0f) / 4.0f +
                                         (j - ny / 2.0f) * (j - ny / 2.0f) +
@@ -41,9 +36,9 @@ void computeInitialCPU(
         }
     }
 
-    for (int i = 0; i < nz; i++) {
-        for (int j = 0; j < ny; j++) {
-            for (int k = 0; k < nx; k++) {
+    for (int k = 0; k < nz; ++k) {
+        for (int j = 0; j < ny; ++j) {
+            for (int i = 0; i < nx; ++i) {
                 int idx = i + nx * (j + ny * k);
                 for (int l = 0; l < fpoints; ++l) {
                     f[F_IDX(i, j, k, l)] = w[l] * rho[idx];
@@ -75,7 +70,7 @@ void generateSimulationInfoFile(const std::string& filepath, int nx, int ny, int
              << "                           NZ: " << nz << '\n'
              << "                           NZ_TOTAL: " << nz << '\n'
              << "                           Tau: " << tau << '\n'
-             << "                           Umax: 0.000000+00\n"
+             << "                           Umax: 5.000000e-02\n"
              << "                           FX: 0.000000e+00\n"
              << "                           FY: 0.000000e+00\n"
              << "                           FZ: 0.000000e+00\n"

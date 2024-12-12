@@ -8,8 +8,6 @@
 
 void initializeVars();
 
-void clearOutputDirectory(const std::string& dir);
-
 void freeMemory(float **pointers, int count);
 
 void computeInitialCPU(

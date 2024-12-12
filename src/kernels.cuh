@@ -28,7 +28,7 @@ __global__ void momentsCalc(
     float *pxx, float *pyy, float *pzz,
     float *pxy, float *pxz, float *pyz,
     float cssq, int nx, int ny, int nz,
-    int fpoints
+    int fpoints, float *fneq
 );
 
 __global__ void collisionCalc(

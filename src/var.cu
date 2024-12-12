@@ -13,6 +13,7 @@ float *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;
 float *d_curvature, *d_ffx, *d_ffy, *d_ffz;
 float *d_ux, *d_uy, *d_uz, *d_pxx, *d_pyy, *d_pzz;
 float *d_pxy, *d_pxz, *d_pyz, *d_rho, *d_phi;
+float *d_fneq;
 
 float *h_pxx = (float *)malloc(nx * ny * nz * sizeof(float));
 float *h_pyy = (float *)malloc(nx * ny * nz * sizeof(float));
@@ -31,14 +32,19 @@ void initializeVars() {
     size_t g_size = nx * ny * nz * gpoints * sizeof(float); 
     size_t vs_size = fpoints * sizeof(float);
 
-    for (int i = 0; i < nx * ny * nz; i++) {
-        h_pxx[i] = 1.0f;
-        h_pyy[i] = 1.0f;
-        h_pzz[i] = 1.0f;
-        h_pxy[i] = 1.0f;
-        h_pxz[i] = 1.0f;
-        h_pyz[i] = 1.0f;
-    }   
+    for (int k = 0; k < nz; ++k) {
+        for (int j = 0; j < ny; ++j) {
+            for (int i = 0; i < nx; ++i){
+                int idx = i + nx * (j + ny * k);
+                h_pxx[idx] = 1.0f;
+                h_pyy[idx] = 1.0f;
+                h_pzz[idx] = 1.0f;
+                h_pxy[idx] = 1.0f;
+                h_pxz[idx] = 1.0f;
+                h_pyz[idx] = 1.0f;
+            }
+        }
+    }
 
     cudaMalloc((void **)&d_rho, size);
     cudaMalloc((void **)&d_phi, size);
@@ -69,6 +75,8 @@ void initializeVars() {
     cudaMalloc((void **)&d_ciy, vs_size);
     cudaMalloc((void **)&d_ciz, vs_size);
 
+    cudaMalloc((void **)&d_fneq, vs_size);
+
     cudaMemset(d_ux, 0, size);
     cudaMemset(d_uy, 0, size);
     cudaMemset(d_uz, 0, size);
@@ -82,6 +90,8 @@ void initializeVars() {
     cudaMemset(d_ffz, 0, size);
     cudaMemset(d_mod_grad, 0, size);
 
+    cudaMemset(d_fneq, 0, vs_size);
+
     cudaMemcpy(d_pxx, h_pxx, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_pyy, h_pyy, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_pzz, h_pzz, size, cudaMemcpyHostToDevice);
@@ -91,7 +101,7 @@ void initializeVars() {
     cudaMemcpy(d_cix, cix, sizeof(cix), cudaMemcpyHostToDevice);
     cudaMemcpy(d_ciy, ciy, sizeof(ciy), cudaMemcpyHostToDevice);
     cudaMemcpy(d_ciz, ciz, sizeof(ciz), cudaMemcpyHostToDevice);
-
+    
     free(h_pxx);
     free(h_pyy);
     free(h_pzz);
