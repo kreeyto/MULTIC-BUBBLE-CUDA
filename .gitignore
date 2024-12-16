@@ -1,0 +1,3 @@
+bin/simulation/000/*
+!bin/simulation/000/.gitkeep
+
