@@ -190,9 +190,9 @@ __global__ void collisionCalc(
             float fneq = (cix[l] * cix[l] - cssq) * pxx[IDX3D(i,j,k)] +
                         (ciy[l] * ciy[l] - cssq) * pyy[IDX3D(i,j,k)] +
                         (ciz[l] * ciz[l] - cssq) * pzz[IDX3D(i,j,k)] +
-                        3 * cix[l] * ciy[l] * pxy[IDX3D(i,j,k)] +
-                        3 * cix[l] * ciz[l] * pxz[IDX3D(i,j,k)] +
-                        3 * ciy[l] * ciz[l] * pyz[IDX3D(i,j,k)];
+                        2 * cix[l] * ciy[l] * pxy[IDX3D(i,j,k)] +
+                        2 * cix[l] * ciz[l] * pxz[IDX3D(i,j,k)] +
+                        2 * ciy[l] * ciz[l] * pyz[IDX3D(i,j,k)];
             f[IDX4D(i + static_cast<int>(cix[l]),
                     j + static_cast<int>(ciy[l]),
                     k + static_cast<int>(ciz[l]),
