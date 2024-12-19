@@ -111,20 +111,20 @@ __global__ void momentsCalc(
     if (i > 0 && i < nx-1 && j > 0 && j < ny-1 && k > 0 && k < nz-1) {
 
         ux[IDX3D(i,j,k)] = (
-            (f[IDX4D(i,j,k,1)] + f[IDX4D(i,j,k,15)] + f[IDX4D(i,j,k,9)] + f[IDX4D(i,j,k,7)] + f[IDX4D(i,j,k,13)]) -
-            (f[IDX4D(i,j,k,2)] + f[IDX4D(i,j,k,10)] + f[IDX4D(i,j,k,16)] + f[IDX4D(i,j,k,14)] + f[IDX4D(i,j,k,7)])
+            (f[IDX4D(i,j,k,1)] + f[IDX4D(i,j,k,7)] + f[IDX4D(i,j,k,13)] + f[IDX4D(i,j,k,9)] + f[IDX4D(i,j,k,15)]) -
+            (f[IDX4D(i,j,k,2)] + f[IDX4D(i,j,k,14)] + f[IDX4D(i,j,k,8)] + f[IDX4D(i,j,k,16)] + f[IDX4D(i,j,k,10)])
         ) / rho[IDX3D(i,j,k)] +
         ffx[IDX3D(i,j,k)] * 0.5 / rho[IDX3D(i,j,k)];
 
         uy[IDX3D(i,j,k)] = (
-            (f[IDX4D(i,j,k,3)] + f[IDX4D(i,j,k,7)] + f[IDX4D(i,j,k,14)] + f[IDX4D(i,j,k,17)] + f[IDX4D(i,j,k,11)]) -
-            (f[IDX4D(i,j,k,4)] + f[IDX4D(i,j,k,13)] + f[IDX4D(i,j,k,8)] + f[IDX4D(i,j,k,12)] + f[IDX4D(i,j,k,18)])
+            (f[IDX4D(i,j,k,3)] + f[IDX4D(i,j,k,7)] + f[IDX4D(i,j,k,14)] + f[IDX4D(i,j,k,11)] + f[IDX4D(i,j,k,17)]) -
+            (f[IDX4D(i,j,k,4)] + f[IDX4D(i,j,k,13)] + f[IDX4D(i,j,k,8)] + f[IDX4D(i,j,k,18)] + f[IDX4D(i,j,k,12)])
         ) / rho[IDX3D(i,j,k)] +
         ffy[IDX3D(i,j,k)] * 0.5 / rho[IDX3D(i,j,k)];
 
         uz[IDX3D(i,j,k)] = (
-            (f[IDX4D(i,j,k,6)] + f[IDX4D(i,j,k,15)] + f[IDX4D(i,j,k,10)] + f[IDX4D(i,j,k,17)] + f[IDX4D(i,j,k,12)]) -
-            (f[IDX4D(i,j,k,5)] + f[IDX4D(i,j,k,9)] + f[IDX4D(i,j,k,16)] + f[IDX4D(i,j,k,11)] + f[IDX4D(i,j,k,18)])
+            (f[IDX4D(i,j,k,5)] + f[IDX4D(i,j,k,9)] + f[IDX4D(i,j,k,16)] + f[IDX4D(i,j,k,11)] + f[IDX4D(i,j,k,12)]) -
+            (f[IDX4D(i,j,k,6)] + f[IDX4D(i,j,k,15)] + f[IDX4D(i,j,k,10)] + f[IDX4D(i,j,k,17)] + f[IDX4D(i,j,k,18)])
         ) / rho[IDX3D(i,j,k)] +
         ffz[IDX3D(i,j,k)] * 0.5 / rho[IDX3D(i,j,k)];
 
@@ -202,7 +202,10 @@ __global__ void collisionCalc(
         for (int l = 0; l < gpoints; ++l) {
             float udotc = (ux[IDX3D(i,j,k)] * cix[l] + uy[IDX3D(i,j,k)] * ciy[l] + uz[IDX3D(i,j,k)] * ciz[l]) / cssq;
             float feq = w_g[l] * phi[IDX3D(i,j,k)] * (1 + udotc);
-            float Hi = sharp_c * phi[IDX3D(i,j,k)] * (1 - phi[IDX3D(i,j,k)]) * (cix[l] * normx[IDX3D(i,j,k)] + ciy[l] * normy[IDX3D(i,j,k)] + ciz[l] * normz[IDX3D(i,j,k)]);
+            float Hi = sharp_c * phi[IDX3D(i,j,k)] * (1 - phi[IDX3D(i,j,k)]) *
+                (cix[l] * normx[IDX3D(i,j,k)] +
+                 ciy[l] * normy[IDX3D(i,j,k)] +
+                 ciz[l] * normz[IDX3D(i,j,k)]);
             g[IDX4D(i,j,k,l)] = feq + w_g[l] * Hi;
         }
 
