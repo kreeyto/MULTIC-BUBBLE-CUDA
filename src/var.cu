@@ -22,26 +22,30 @@ float *h_pxy = (float *)malloc(nx * ny * nz * sizeof(float));
 float *h_pxz = (float *)malloc(nx * ny * nz * sizeof(float));
 float *h_pyz = (float *)malloc(nx * ny * nz * sizeof(float));
 
-const float cix[19] = { 0, 1, -1, 0, 0, 0,  0,  1, -1,  1, -1,  0,  0,  0,  1, -1,  1, -1,  0 };
-const float ciy[19] = { 0, 0,  0, 1, -1, 0,  0,  1,  1, -1, -1,  1, -1,  0,  0,  0,  0,  0, -1 };
-const float ciz[19] = { 0, 0,  0, 0,  0, 1, -1,  0,  0,  0,  0,  1,  1, -1, -1,  1,  1, -1, -1 };
+const float cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
+const float ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
+const float ciz[19] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1 };
 
 void initializeVars() {
     size_t size = nx * ny * nz * sizeof(float);            
     size_t f_size = nx * ny * nz * fpoints * sizeof(float); 
     size_t g_size = nx * ny * nz * gpoints * sizeof(float); 
     size_t vs_size = fpoints * sizeof(float);
+    size_t pf_size = gpoints * sizeof(float);
+
+    auto IDX3D = [&](int i, int j, int k) {
+        return ((i) + nx * ((j) + ny * (k)));
+    };
 
     for (int k = 0; k < nz; ++k) {
         for (int j = 0; j < ny; ++j) {
             for (int i = 0; i < nx; ++i){
-                int idx = i + nx * (j + ny * k);
-                h_pxx[idx] = 1.0f;
-                h_pyy[idx] = 1.0f;
-                h_pzz[idx] = 1.0f;
-                h_pxy[idx] = 1.0f;
-                h_pxz[idx] = 1.0f;
-                h_pyz[idx] = 1.0f;
+                h_pxx[IDX3D(i,j,k)] = 1.0f;
+                h_pyy[IDX3D(i,j,k)] = 1.0f;
+                h_pzz[IDX3D(i,j,k)] = 1.0f;
+                h_pxy[IDX3D(i,j,k)] = 1.0f;
+                h_pxz[IDX3D(i,j,k)] = 1.0f;
+                h_pyz[IDX3D(i,j,k)] = 1.0f;
             }
         }
     }
@@ -70,7 +74,7 @@ void initializeVars() {
     cudaMalloc((void **)&d_f, f_size);
     cudaMalloc((void **)&d_g, g_size);
     cudaMalloc((void **)&d_w, vs_size);
-    cudaMalloc((void **)&d_w_g, gpoints * sizeof(float));
+    cudaMalloc((void **)&d_w_g, pf_size);
     cudaMalloc((void **)&d_cix, vs_size);
     cudaMalloc((void **)&d_ciy, vs_size);
     cudaMalloc((void **)&d_ciz, vs_size);
@@ -98,9 +102,9 @@ void initializeVars() {
     cudaMemcpy(d_pxy, h_pxy, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_pxz, h_pxz, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_pyz, h_pyz, size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_cix, cix, sizeof(cix), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_ciy, ciy, sizeof(ciy), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_ciz, ciz, sizeof(ciz), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_cix, cix, vs_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_ciy, ciy, vs_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_ciz, ciz, vs_size, cudaMemcpyHostToDevice);
     
     free(h_pxx);
     free(h_pyy);

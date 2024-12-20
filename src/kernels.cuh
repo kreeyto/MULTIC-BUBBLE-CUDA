@@ -21,7 +21,7 @@ __global__ void curvatureCalc(
     int fpoints, int nx, int ny, int nz
 );
 
-__global__ void momentsCalc(
+__global__ void momentiCalc(
     float *ux, float *uy, float *uz, float *rho,
     float *ffx, float *ffy, float *ffz, float *w, float *f,
     const float *cix, const float *ciy, const float *ciz,
@@ -47,14 +47,10 @@ __global__ void streamingCalc(
     int nx, int ny, int nz, int gpoints
 );
 
-__global__ void fgBoundaryCalc(
+__global__ void boundaryConditions(
     float *f, float *g, float *rho, float *phi, float *w, float *w_g,
     const float *cix, const float *ciy, const float *ciz,
     int fpoints, int gpoints, int nx, int ny, int nz
-);
-
-__global__ void boundaryConditions(
-    float *phi, int nx, int ny, int nz
 );
 
 #endif

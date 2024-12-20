@@ -20,18 +20,20 @@ void computeInitialCPU(
     std::vector<float> &f, std::vector<float> &g, int nx, int ny, int nz, int fpoints, int gpoints, float res
 ) {
 
-    auto F_IDX = [&](int i, int j, int k, int l) {
-        return i + nx * (j + ny * (k + nz * l));
+    auto IDX3D = [&](int i, int j, int k) {
+        return ((i) + nx * ((j) + ny * (k)));
+    };
+    auto IDX4D = [&](int i, int j, int k, int l) {
+        return ((i) + nx * ((j) + ny * ((k) + nz * (l))));
     };
 
     for (int k = 1; k < nz-1; ++k) {
         for (int j = 1; j < ny-1; ++j) {
             for (int i = 1; i < nx-1; ++i) {
-                int idx = i + nx * (j + ny * k);
                 float Ri = std::sqrt((i - nx / 2.0f) * (i - nx / 2.0f) / 4.0f +
                                         (j - ny / 2.0f) * (j - ny / 2.0f) +
                                         (k - nz / 2.0f) * (k - nz / 2.0f));
-                phi[idx] = 0.5f + 0.5f * std::tanh(2.0f * (20 * res - Ri) / (3.0f * res));
+                phi[IDX3D(i,j,k)] = 0.5f + 0.5f * std::tanh(2.0f * (20 * res - Ri) / (3.0f * res));
             }
         }
     }
@@ -39,12 +41,11 @@ void computeInitialCPU(
     for (int k = 0; k < nz; ++k) {
         for (int j = 0; j < ny; ++j) {
             for (int i = 0; i < nx; ++i) {
-                int idx = i + nx * (j + ny * k);
                 for (int l = 0; l < fpoints; ++l) {
-                    f[F_IDX(i, j, k, l)] = w[l] * rho[idx];
+                    f[IDX4D(i,j,k,l)] = w[l] * rho[IDX3D(i,j,k)];
                 }
                 for (int l = 0; l < gpoints; ++l) {
-                    g[F_IDX(i, j, k, l)] = w_g[l] * phi[idx];
+                    g[IDX4D(i,j,k,l)] = w_g[l] * phi[IDX3D(i,j,k)];
                 }
             }
         }
