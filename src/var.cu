@@ -7,6 +7,7 @@ float res = 1.0f;
 int mesh = static_cast<int>(std::round(150 * res));
 int nx = mesh, ny = mesh, nz = mesh, fpoints = 19, gpoints = 15;
 float tau = 0.505f, cssq = 1.0f / 3.0f, omega = 1.0f / tau, sharp_c = 0.15f * 3.0f, sigma = 0.1f;
+float grad_fix, grad_fiy, grad_fiz;
 
 float *d_f, *d_g, *d_w, *d_w_g, *d_cix, *d_ciy, *d_ciz;
 float *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;

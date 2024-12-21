@@ -1,12 +1,12 @@
-#include "kernels.cuh"
+#include "neokernels.cuh"
 #include "utils.cuh"
 #include "var.cuh"
 #include "errorDef.cuh"
 #include <fstream>
 #include <string>
 #include <iostream>
-#include <sstream> 
-#include <iomanip>   
+#include <sstream>
+#include <iomanip>
 
 
 int main() {
@@ -14,9 +14,9 @@ int main() {
 
     int stamp = 1, nsteps = 50;
     std::vector<float> phi_host(nx * ny * nz, 0.0f);
-    std::vector<float> ux_host(nx * ny * nz, 0.0f);
-    std::vector<float> uy_host(nx * ny * nz, 0.0f);
-    std::vector<float> uz_host(nx * ny * nz, 0.0f);
+    // std::vector<float> ux_host(nx * ny * nz, 0.0f);
+    // std::vector<float> uy_host(nx * ny * nz, 0.0f);
+    // std::vector<float> uz_host(nx * ny * nz, 0.0f);
     std::string output_dir = "../bin/simulation/000/";
     std::string info_file = "../bin/simulation/000/000_info.txt";
 
@@ -56,6 +56,7 @@ int main() {
 
         std::cout << "Passo " << t << " de " << nsteps << " iniciado..." << std::endl;
 
+        /*
         phiCalc<<<numBlocks, threadsPerBlock>>> (
             d_phi, d_g, gpoints, nx, ny, nz
         );
@@ -117,6 +118,120 @@ int main() {
         );
         getLastCudaError("Erro no kernel boundaryConditions");
         cudaDeviceSynchronize();
+        */
+
+        phiCalc<<<numBlocks, threadsPerBlock>>> (
+            d_phi, d_g, nx, ny, nz
+        );
+        cudaDeviceSynchronize();
+
+        gradCalc<<<numBlocks, threadsPerBlock>>> (
+            d_w, d_cix, d_ciy, d_ciz, 
+            fpoints, nx, ny, nz, grad_fix, grad_fiy, grad_fiz
+        );
+        cudaDeviceSynchronize();
+
+        postGrad<<<numBlocks, threadsPerBlock>>> (
+            d_mod_grad, d_normx, d_normy, d_normz, 
+            d_indicator, nx, ny, nz, grad_fix, grad_fiy, grad_fiz
+        );
+        cudaDeviceSynchronize();
+
+        curvatureCalc<<<numBlocks, threadsPerBlock>>> (
+            d_curvature,
+            d_cix, d_ciy, d_ciz,
+            d_normx, d_normy, d_normz,
+            fpoints, nx, ny, nz
+        );
+        cudaDeviceSynchronize();
+
+        postCurv<<<numBlocks, threadsPerBlock>>> (
+            d_curvature, d_indicator,
+            d_normx, d_normy, d_normz,
+            d_ffx, d_ffy, d_ffz, sigma,
+            nx, ny, nz
+        );
+        cudaDeviceSynchronize();
+
+        momentiCalc<<<numBlocks, threadsPerBlock>>> (
+            d_ux, d_uy, d_uz, d_rho,
+            d_ffx, d_ffy, d_ffz, d_f,
+            nx, ny, nz
+        )
+        cudaDeviceSynchronize();
+
+        uuCalc<<<numBlocks, threadsPerBlock>>> (
+            d_ux, d_uy, d_uz,
+            nx, ny, nz, cssq
+        )
+        cudaDeviceSynchronize();
+
+        rhoCalc<<<numBlocks, threadsPerBlock>>> (
+            d_rho, d_f,
+            nx, ny, nz
+        )
+        cudaDeviceSynchronize();
+
+        fneqCalc<<<numBlocks, threadsPerBlock>>> (
+            d_ux, d_uy, d_uz, d_rho,
+            d_ffx, d_ffy, d_ffz, d_w, d_f,
+            d_cix, d_ciy, d_ciz,
+            cssq, nx, ny, nz,
+            fpoints, d_fneq
+        )
+        cudaDeviceSynchronize();
+
+        tensorCalc<<<numBlocks, threadsPerBlock>>> (
+            d_pxx, d_pyy, d_pzz,
+            d_pxy, d_pxz, d_pyz,
+            nx, ny, nz, d_fneq
+        )
+        cudaDeviceSynchronize();
+
+        uuCalc<<<numBlocks, threadsPerBlock>>> (
+            d_ux, d_uy, d_uz,
+            nx, ny, nz, cssq
+        )
+        cudaDeviceSynchronize();
+
+        collisionCalc<<<numBlocks, threadsPerBlock>>> (
+            d_ux, d_uy, d_uz, d_w,
+            d_cix, d_ciy, d_ciz,
+            d_ffx, d_ffy, d_ffz,
+            d_rho, d_f,
+            d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz,
+            cssq, omega, fpoints,
+            nx, ny, nz
+        )
+        cudaDeviceSynchronize();
+
+        colStep<<<numBlocks, threadsPerBlock>>> (
+            d_ux, d_uy, d_uz, d_w_g,
+            d_cix, d_ciy, d_ciz,
+            d_normx, d_normy, d_normz,
+            d_phi, d_g,
+            cssq, sharp_c, gpoints,
+            nx, ny, nz
+        )
+        cudaDeviceSynchronize();
+
+        streamingCalc<<<numBlocks, threadsPerBlock>>> (
+            d_g, d_cix, d_ciy, d_ciz,
+            nx, ny, nz, gpoints
+        )
+        cudaDeviceSynchronize();
+
+        fgBoundary<<<numBlocks, threadsPerBlock>>> (
+            d_f, d_g, d_rho, d_phi, d_w, d_w_g,
+            d_cix, d_ciy, d_ciz,
+            fpoints, gpoints, nx, ny, nz
+        )
+        cudaDeviceSynchronize();
+
+        boundaryConditions<<<numBlocks, threadsPerBlock>>> (
+            d_phi, nx, ny, nz
+        )
+        cudaDeviceSynchronize();
 
         if (t % stamp == 0) {
 
@@ -128,6 +243,7 @@ int main() {
             file_phi.write(reinterpret_cast<const char*>(phi_host.data()), phi_host.size() * sizeof(float));
             file_phi.close();
 
+            /*
             checkCudaErrors(cudaMemcpy(ux_host.data(), d_ux, nx * ny * nz * sizeof(float), cudaMemcpyDeviceToHost));
             filename_ux << output_dir << "000_ux" << std::setw(6) << std::setfill('0') << t << ".bin";
             std::ofstream file_ux(filename_ux.str(), std::ios::binary);
@@ -145,6 +261,7 @@ int main() {
             std::ofstream file_uz(filename_uz.str(), std::ios::binary); 
             file_uz.write(reinterpret_cast<const char*>(uz_host.data()), uz_host.size() * sizeof(float));
             file_uz.close();
+            */
 
             std::cout << "Passo " << t << ": Dados salvos em " << output_dir << std::endl;
         }

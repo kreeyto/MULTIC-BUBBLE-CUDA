@@ -3,6 +3,7 @@
 extern float res;
 extern int nx, ny, nz, fpoints, gpoints;
 extern float tau, cssq, omega, sharp_c, sigma;
+extern float grad_fix, grad_fiy, grad_fiz;
  
 extern float *d_f, *d_g, *d_w, *d_w_g, *d_cix, *d_ciy, *d_ciz;
 extern float *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;
