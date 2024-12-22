@@ -5,8 +5,18 @@
 
 float res = 1.0f;
 int mesh = static_cast<int>(std::round(150 * res));
-int nx = mesh, ny = mesh, nz = mesh, fpoints = 19, gpoints = 15;
-float tau = 1.0f, cssq = 1.0f / 3.0f, omega = 1.0f / tau, sharp_c = 0.15f * 3.0f, sigma = 0.024f;
+
+__constant__ int nx;
+__constant__ int ny;
+__constant__ int nz;
+__constant__ int fpoints = 19;
+__constant__ int gpoints = 15;
+
+__constant__ float tau = 1.0f;
+__constant__ float cssq = 1.0f / 3.0f;
+__constant__ float omega = 1.0f / tau;
+__constant__ float sharp_c = 0.15f * 3.0f;
+__constant__ float sigma = 0.024f;
 
 float *d_f, *d_g, *d_w, *d_w_g, *d_cix, *d_ciy, *d_ciz;
 float *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;
@@ -22,9 +32,9 @@ float *h_pxy = (float *)malloc(nx * ny * nz * sizeof(float));
 float *h_pxz = (float *)malloc(nx * ny * nz * sizeof(float));
 float *h_pyz = (float *)malloc(nx * ny * nz * sizeof(float));
 
-const float cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
-const float ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
-const float ciz[19] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1 };
+__constant__ float cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
+__constant__ float ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
+__constant__ float ciz[19] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1 };
 
 void initializeVars() {
     size_t size = nx * ny * nz * sizeof(float);            
