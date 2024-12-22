@@ -6,8 +6,7 @@
 float res = 1.0f;
 int mesh = static_cast<int>(std::round(150 * res));
 int nx = mesh, ny = mesh, nz = mesh, fpoints = 19, gpoints = 15;
-float tau = 0.505f, cssq = 1.0f / 3.0f, omega = 1.0f / tau, sharp_c = 0.15f * 3.0f, sigma = 0.1f;
-float grad_fix, grad_fiy, grad_fiz;
+float tau = 1.0f, cssq = 1.0f / 3.0f, omega = 1.0f / tau, sharp_c = 0.15f * 3.0f, sigma = 0.024f;
 
 float *d_f, *d_g, *d_w, *d_w_g, *d_cix, *d_ciy, *d_ciz;
 float *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;
@@ -40,7 +39,7 @@ void initializeVars() {
 
     for (int k = 0; k < nz; ++k) {
         for (int j = 0; j < ny; ++j) {
-            for (int i = 0; i < nx; ++i){
+            for (int i = 0; i < nx; ++i) {
                 h_pxx[IDX3D(i,j,k)] = 1.0f;
                 h_pyy[IDX3D(i,j,k)] = 1.0f;
                 h_pzz[IDX3D(i,j,k)] = 1.0f;
@@ -79,7 +78,6 @@ void initializeVars() {
     cudaMalloc((void **)&d_cix, vs_size);
     cudaMalloc((void **)&d_ciy, vs_size);
     cudaMalloc((void **)&d_ciz, vs_size);
-
     cudaMalloc((void **)&d_fneq, vs_size);
 
     cudaMemset(d_ux, 0, size);
@@ -94,7 +92,6 @@ void initializeVars() {
     cudaMemset(d_ffy, 0, size);
     cudaMemset(d_ffz, 0, size);
     cudaMemset(d_mod_grad, 0, size);
-
     cudaMemset(d_fneq, 0, vs_size);
 
     cudaMemcpy(d_pxx, h_pxx, size, cudaMemcpyHostToDevice);
@@ -106,7 +103,7 @@ void initializeVars() {
     cudaMemcpy(d_cix, cix, vs_size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_ciy, ciy, vs_size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_ciz, ciz, vs_size, cudaMemcpyHostToDevice);
-    
+
     free(h_pxx);
     free(h_pyy);
     free(h_pzz);

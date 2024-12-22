@@ -136,7 +136,7 @@ __global__ void momentiCalc(
                             f[IDX4D(i,j,k,9)] + f[IDX4D(i,j,k,10)] + f[IDX4D(i,j,k,11)] +
                             f[IDX4D(i,j,k,12)] + f[IDX4D(i,j,k,13)] + f[IDX4D(i,j,k,14)] +
                             f[IDX4D(i,j,k,15)] + f[IDX4D(i,j,k,16)] + f[IDX4D(i,j,k,17)] +
-                            f[IDX4D(i,j,k,18)];
+                            f[IDX4D(i,j,k,18)]; 
 
         for (int l = 0; l < fpoints; ++l) {
             float udotc = (ux[IDX3D(i,j,k)] * cix[l] + uy[IDX3D(i,j,k)] * ciy[l] + uz[IDX3D(i,j,k)] * ciz[l]) / cssq;
@@ -148,7 +148,7 @@ __global__ void momentiCalc(
             float feq = w[l] * (rho[IDX3D(i,j,k)] + rho[IDX3D(i,j,k)] * (udotc + 0.5 * pow(udotc,2) - uu)) - 0.5 * HeF;
             fneq[l] = f[IDX4D(i,j,k,l)] - feq;
         }
-
+  
         pxx[IDX3D(i,j,k)] = fneq[1] + fneq[2] + fneq[7] + fneq[8] + fneq[9] + fneq[10] + fneq[13] + fneq[14] + fneq[15] + fneq[16];
         pyy[IDX3D(i,j,k)] = fneq[3] + fneq[4] + fneq[7] + fneq[8] + fneq[11] + fneq[12] + fneq[13] + fneq[14] + fneq[17] + fneq[18];
         pzz[IDX3D(i,j,k)] = fneq[5] + fneq[6] + fneq[9] + fneq[10] + fneq[11] + fneq[12] + fneq[15] + fneq[16] + fneq[17] + fneq[18];
@@ -255,7 +255,7 @@ __global__ void boundaryConditions(
                         l)] = rho[IDX3D(i,j,k)] * w[l];
             }
         }
-
+        
         for (int l = 0; l < gpoints; ++l) {
             if (i + static_cast<int>(cix[l]) >= 0 && j + static_cast<int>(ciy[l]) >= 0 && k + static_cast<int>(ciz[l]) >= 0) {
                 g[IDX4D(i + static_cast<int>(cix[l]),
