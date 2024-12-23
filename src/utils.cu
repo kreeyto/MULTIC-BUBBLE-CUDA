@@ -7,7 +7,9 @@
 #include <string>
 #include <cstdlib>
 
-void freeMemory(float **pointers, int count) {
+#include "precision.cuh"
+
+void freeMemory(dfloat **pointers, int count) {
     for (int i = 0; i < count; ++i) {
         if (pointers[i] != nullptr) {
             cudaFree(pointers[i]);
@@ -16,8 +18,8 @@ void freeMemory(float **pointers, int count) {
 }
 
 void computeInitialCPU(
-    std::vector<float> &phi, std::vector<float> &rho, const std::vector<float> &w, const std::vector<float> &w_g, 
-    std::vector<float> &f, std::vector<float> &g, int nx, int ny, int nz, int fpoints, int gpoints, float res
+    std::vector<dfloat> &phi, std::vector<dfloat> &rho, const std::vector<dfloat> &w, const std::vector<dfloat> &w_g, 
+    std::vector<dfloat> &f, std::vector<dfloat> &g, int nx, int ny, int nz, int fpoints, int gpoints, dfloat res
 ) {
 
     auto IDX3D = [&](int i, int j, int k) {
@@ -30,7 +32,7 @@ void computeInitialCPU(
     for (int k = 1; k < nz-1; ++k) {
         for (int j = 1; j < ny-1; ++j) {
             for (int i = 1; i < nx-1; ++i) {
-                float Ri = std::sqrt((i - nx / 2.0f) * (i - nx / 2.0f) / 4.0f +
+                dfloat Ri = std::sqrt((i - nx / 2.0f) * (i - nx / 2.0f) / 4.0f +
                                         (j - ny / 2.0f) * (j - ny / 2.0f) +
                                         (k - nz / 2.0f) * (k - nz / 2.0f));
                 phi[IDX3D(i,j,k)] = 0.5f + 0.5f * std::tanh(2.0f * (20 * res - Ri) / (3.0f * res));
@@ -53,7 +55,7 @@ void computeInitialCPU(
 
 }
 
-void generateSimulationInfoFile(const std::string& filepath, int nx, int ny, int nz, int stamp, int nsteps, float tau) {
+void generateSimulationInfoFile(const std::string& filepath, int nx, int ny, int nz, int stamp, int nsteps, dfloat tau) {
     try {
         std::ofstream file(filepath);
 
@@ -65,7 +67,7 @@ void generateSimulationInfoFile(const std::string& filepath, int nx, int ny, int
         file << "---------------------------- SIMULATION INFORMATION ----------------------------\n"
              << "                           Simulation ID: 000\n"
              << "                           Velocity set: D3Q19\n"
-             << "                           Precision: float\n"
+             << "                           Precision: " << PRECISION_TYPE << '\n'
              << "                           NX: " << nx << '\n'
              << "                           NY: " << ny << '\n'
              << "                           NZ: " << nz << '\n'
@@ -78,10 +80,6 @@ void generateSimulationInfoFile(const std::string& filepath, int nx, int ny, int
              << "                           Save steps: " << stamp << '\n'
              << "                           Nsteps: " << nsteps << '\n'
              << "                           MLUPS: 1.187970e+01\n"
-             << "--------------------------------------------------------------------------------\n\n"
-             << "------------------------------ BOUNDARY CONDITIONS -----------------------------\n"
-             << "                           BC mode: Moment Based \n"
-             << "                           BC type: testBC\n"
              << "--------------------------------------------------------------------------------\n";
 
         file.close();

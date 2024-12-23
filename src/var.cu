@@ -3,7 +3,9 @@
 #include <iostream>
 #include <vector>
 
-float res = 1.0f;
+#include "precision.cuh"
+
+dfloat res = 1.0f;
 int mesh = static_cast<int>(std::round(150 * res));
 
 int nx = mesh;
@@ -12,36 +14,36 @@ int nz = mesh;
 int fpoints = 19;
 int gpoints = 15;
 
-float tau = 1.0f;
-float cssq = 1.0f / 3.0f;
-float omega = 1.0f / tau;
-float sharp_c = 0.15f * 3.0f;
-float sigma = 0.024f;
+dfloat tau = 1.0f;
+dfloat cssq = 1.0f / 3.0f;
+dfloat omega = 1.0f / tau;
+dfloat sharp_c = 0.15f * 3.0f;
+dfloat sigma = 0.024f;
 
-float *d_f, *d_g, *d_w, *d_w_g, *d_cix, *d_ciy, *d_ciz;
-float *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;
-float *d_curvature, *d_ffx, *d_ffy, *d_ffz;
-float *d_ux, *d_uy, *d_uz, *d_pxx, *d_pyy, *d_pzz;
-float *d_pxy, *d_pxz, *d_pyz, *d_rho, *d_phi;
-float *d_fneq;
+dfloat *d_f, *d_g, *d_w, *d_w_g, *d_cix, *d_ciy, *d_ciz;
+dfloat *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;
+dfloat *d_curvature, *d_ffx, *d_ffy, *d_ffz;
+dfloat *d_ux, *d_uy, *d_uz, *d_pxx, *d_pyy, *d_pzz;
+dfloat *d_pxy, *d_pxz, *d_pyz, *d_rho, *d_phi;
+dfloat *d_fneq;
 
-float *h_pxx = (float *)malloc(nx * ny * nz * sizeof(float));
-float *h_pyy = (float *)malloc(nx * ny * nz * sizeof(float));
-float *h_pzz = (float *)malloc(nx * ny * nz * sizeof(float));
-float *h_pxy = (float *)malloc(nx * ny * nz * sizeof(float));
-float *h_pxz = (float *)malloc(nx * ny * nz * sizeof(float));
-float *h_pyz = (float *)malloc(nx * ny * nz * sizeof(float));
+dfloat *h_pxx = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
+dfloat *h_pyy = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
+dfloat *h_pzz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
+dfloat *h_pxy = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
+dfloat *h_pxz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
+dfloat *h_pyz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 
-const float cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
-const float ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
-const float ciz[19] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1 };
+const dfloat cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
+const dfloat ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
+const dfloat ciz[19] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1 };
 
 void initializeVars() {
-    size_t size = nx * ny * nz * sizeof(float);            
-    size_t f_size = nx * ny * nz * fpoints * sizeof(float); 
-    size_t g_size = nx * ny * nz * gpoints * sizeof(float); 
-    size_t vs_size = fpoints * sizeof(float);
-    size_t pf_size = gpoints * sizeof(float);
+    size_t size = nx * ny * nz * sizeof(dfloat);            
+    size_t f_size = nx * ny * nz * fpoints * sizeof(dfloat); 
+    size_t g_size = nx * ny * nz * gpoints * sizeof(dfloat); 
+    size_t vs_size = fpoints * sizeof(dfloat);
+    size_t pf_size = gpoints * sizeof(dfloat);
 
     auto IDX3D = [&](int i, int j, int k) {
         return ((i) + nx * ((j) + ny * (k)));
