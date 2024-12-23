@@ -71,7 +71,7 @@ void generateSimulationInfoFile(const std::string& filepath, int nx, int ny, int
              << "                           NZ: " << nz << '\n'
              << "                           NZ_TOTAL: " << nz << '\n'
              << "                           Tau: " << tau << '\n'
-             << "                           Umax: 5.000000e-02\n"
+             << "                           Umax: 0.000000e+00\n"
              << "                           FX: 0.000000e+00\n"
              << "                           FY: 0.000000e+00\n"
              << "                           FZ: 0.000000e+00\n"
