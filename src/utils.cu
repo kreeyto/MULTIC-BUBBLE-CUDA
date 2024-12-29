@@ -55,7 +55,10 @@ void computeInitialCPU(
 
 }
 
-void generateSimulationInfoFile(const std::string& filepath, int nx, int ny, int nz, int stamp, int nsteps, dfloat tau) {
+void generateSimulationInfoFile(
+    const std::string& filepath, int nx, int ny, int nz, int stamp, int nsteps, dfloat tau, 
+    const std::string& sim_id, const std::string& fluid_model
+) {
     try {
         std::ofstream file(filepath);
 
@@ -65,8 +68,8 @@ void generateSimulationInfoFile(const std::string& filepath, int nx, int ny, int
         }
 
         file << "---------------------------- SIMULATION INFORMATION ----------------------------\n"
-             << "                           Simulation ID: 000\n"
-             << "                           Velocity set: D3Q19\n"
+             << "                           Simulation ID: " << sim_id << '\n'
+             << "                           Velocity set: " << fluid_model << '\n'
              << "                           Precision: " << PRECISION_TYPE << '\n'
              << "                           NX: " << nx << '\n'
              << "                           NY: " << ny << '\n'
@@ -88,4 +91,3 @@ void generateSimulationInfoFile(const std::string& filepath, int nx, int ny, int
         std::cerr << "Erro ao gerar o arquivo de informações: " << e.what() << std::endl;
     }
 }
-

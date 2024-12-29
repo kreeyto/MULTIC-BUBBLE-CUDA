@@ -2,9 +2,25 @@ from dataSave import *
 from fileTreat import *
 import math
 import sys
-path = "./../bin/simulation/" + sys.argv[1] + "/"
 
-# Get the macroscopics in the folder
+if len(sys.argv) < 2:
+    print("Uso: python3 exampleVTK.py <ID>")
+    sys.exit(1)
+
+# Argumentos recebidos
+simulation_id = sys.argv[1]
+fluid_model = sys.argv[2]
+phase_model = sys.argv[3]
+
+# Caminho dinâmico baseado nos modelos e ID
+path = f"./../bin/{fluid_model}_{phase_model}/{simulation_id}/"
+
+# Verifica se o caminho existe
+if not os.path.exists(path):
+    print(f"Erro: O caminho {path} não existe.")
+    sys.exit(1)
+
+# Obtém os dados macroscópicos na pasta
 macrSteps = getMacrSteps(path)
 info = getSimInfo(path)
 

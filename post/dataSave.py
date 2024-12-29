@@ -44,31 +44,3 @@ def saveVTK3D(macrsDict, path, filenameWrite, points=True, normVal=1):
         y = np.arange(0, (info['NY'] - 1) / normVal + 0.1 * dy, dy, dtype=prc)
         z = np.arange(0, (info['NZ_TOTAL'] - 1) / normVal + 0.1 * dz, dz, dtype=prc)
         gridToVTK(path + filenameWrite, x, y, z, pointData=macrsDict)
-
-
-def saveMacrCsv(filenameWrite, macr, normalizeDist=False):
-    """ Saves macroscopics in a csv file
-
-    Parameters
-    ----------
-    filenameWrite : str
-        Filename to write to
-    macr : np.array()
-        Array with macroscopics to save (1D or 2D)
-    normalizeDist : bool, optional
-        Normalize distance or not for 1D, by default False
-    """
-
-    with open(PATH + filenameWrite, 'w') as f:
-        if(len(macr.shape) == 1):  # 1D
-            # csv is: position, value
-            if(not normalizeDist):
-                array = [[i, macr[i]] for i in range(0, len(macr))]
-                np.savetxt(f, array, fmt=['%d', '%.6e'], delimiter=',')
-            else:
-                array = [(i / len(macr), macr[i]) for i in range(0, len(macr))]
-                np.savetxt(f, array, fmt=['%.6e', '%.6e'], delimiter=',')
-        elif(len(macr.shape) == 2):  # 2D
-            np.savetxt(f, macr, delimiter=',')
-        else:
-            print("Input array for \"saveMacrCsv\" is not 2D or 1D")

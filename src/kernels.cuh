@@ -4,7 +4,7 @@
 #include "precision.cuh"
 
 __global__ void phiCalc(
-    dfloat *phi, dfloat *g, int gpoints,
+    dfloat *phi, dfloat *g, 
     int nx, int ny, int nz
 );
 

@@ -10,30 +10,80 @@
 
 #include "precision.cuh"
 
-int main() {
+int main(int argc, char* argv[]) {
+    if (argc < 4) {
+        std::cerr << "Erro: Uso: " << argv[0] << " <fluid_model> <phase_model> <id>" << std::endl;
+        return 1;
+    }
+
+    std::string fluid_model = argv[1];
+    std::string phase_model = argv[2];
+    std::string id = argv[3];
+
+    std::string base_dir = "/home/breno/Desktop/Bubble-GPU/bin/";
+    std::string model_dir = base_dir + fluid_model + "_" + phase_model + "/";
+    std::string sim_dir = model_dir + id + "/";
+
+    int ret = system(("mkdir -p " + sim_dir).c_str());
+    (void)ret; 
+
+    std::string info_file = sim_dir + id + "_info.txt";
+
     initializeVars();
 
     int stamp = 1, nsteps = 50;
     std::vector<dfloat> phi_host(nx * ny * nz, 0.0f);
-    std::vector<dfloat> rho_host(nx * ny * nz, 0.0f);
-    std::string output_dir = "../bin/simulation/000/";
-    std::string info_file = "../bin/simulation/000/000_info.txt";
-    generateSimulationInfoFile(info_file, nx, ny, nz, stamp, nsteps, tau);
+
+    generateSimulationInfoFile(info_file, nx, ny, nz, stamp, nsteps, tau, id, fluid_model);
 
     std::vector<dfloat> f(nx * ny * nz * fpoints, 0.0f);
     std::vector<dfloat> g(nx * ny * nz * gpoints, 0.0f);
     std::vector<dfloat> phi(nx * ny * nz, 0.0f);
     std::vector<dfloat> rho(nx * ny * nz, 1.0f); 
-    const std::vector<dfloat> w = {
-        1.0f / 3.0f, 
-        1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f,
-        1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f
-    };
-    const std::vector<dfloat> w_g = {
-        2.0f / 9.0f, 
-        1.0f / 9.0f, 1.0f / 9.0f, 1.0f / 9.0f, 1.0f / 9.0f, 1.0f / 9.0f,
-        1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f
-    };
+    
+    #ifdef FD3Q19
+        const std::vector<dfloat> w = {
+            1.0f / 3.0f, 
+            1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f,
+            1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f
+        };
+    #elif defined(FD3Q27)
+        const std::vector <dfloat> w = {
+            8.0f / 27.0f,
+            2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 
+            1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 
+            1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f
+        };
+    #endif
+
+    #ifdef PD3Q15
+        const std::vector<dfloat> w_g = {
+            2.0f / 9.0f, 
+            1.0f / 9.0f, 1.0f / 9.0f, 1.0f / 9.0f, 1.0f / 9.0f, 1.0f / 9.0f,
+            1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f, 1.0f / 72.0f
+        };
+    #elif defined(PD3Q19)
+        const std::vector <dfloat> w_g = {
+            1.0f / 3.0f, 
+            1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f,
+            1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f
+        };
+    #elif defined(PD3Q25)
+        const std::vector<dfloat> w_g = {
+            8.0f / 27.0f, 
+            2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 
+            1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 
+            1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f 
+        };
+    #elif defined(PD3Q27)
+        const std::vector <dfloat> w_g = {
+            8.0f / 27.0f,
+            2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 
+            1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 
+            1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f
+        };
+    #endif
+
     computeInitialCPU(phi, rho, w, w_g, f, g, nx, ny, nz, fpoints, gpoints, res);
 
     checkCudaErrors(cudaMemcpy(d_f, f.data(), nx * ny * nz * fpoints * sizeof(dfloat), cudaMemcpyHostToDevice));
@@ -53,7 +103,7 @@ int main() {
         std::cout << "Passo " << t << " de " << nsteps << " iniciado..." << std::endl;
 
         phiCalc<<<numBlocks, threadsPerBlock>>> (
-            d_phi, d_g, gpoints, nx, ny, nz
+            d_phi, d_g, nx, ny, nz
         );
         getLastCudaError("Erro no kernel phiCalc");
         cudaDeviceSynchronize();
@@ -116,21 +166,14 @@ int main() {
 
         if (t % stamp == 0) {
 
-            std::ostringstream filename_phi, filename_rho;
-            
+            std::ostringstream filename_phi;
             checkCudaErrors(cudaMemcpy(phi_host.data(), d_phi, nx * ny * nz * sizeof(dfloat), cudaMemcpyDeviceToHost));
-            filename_phi << output_dir << "000_phi" << std::setw(6) << std::setfill('0') << t << ".bin";
+            filename_phi << sim_dir << id << "_phi" << std::setw(6) << std::setfill('0') << t << ".bin";
             std::ofstream file_phi(filename_phi.str(), std::ios::binary);
             file_phi.write(reinterpret_cast<const char*>(phi_host.data()), phi_host.size() * sizeof(dfloat));
             file_phi.close();
 
-            checkCudaErrors(cudaMemcpy(rho_host.data(), d_rho, nx * ny * nz * sizeof(dfloat), cudaMemcpyDeviceToHost));
-            filename_rho << output_dir << "000_rho" << std::setw(6) << std::setfill('0') << t << ".bin";
-            std::ofstream file_rho(filename_rho.str(), std::ios::binary);
-            file_rho.write(reinterpret_cast<const char*>(rho_host.data()), rho_host.size() * sizeof(dfloat));
-            file_rho.close();
-
-            std::cout << "Passo " << t << ": Dados salvos em " << output_dir << std::endl;
+            std::cout << "Passo " << t << ": Dados salvos em " << sim_dir << std::endl;
 
         }
         

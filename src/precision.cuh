@@ -2,7 +2,7 @@
 #ifndef PRECISION_H
 #define PRECISION_H
 
-#define SINGLE_PRECISION 
+#define SINGLE_PRECISION
 
 #ifdef SINGLE_PRECISION
     typedef float dfloat;      // single precision

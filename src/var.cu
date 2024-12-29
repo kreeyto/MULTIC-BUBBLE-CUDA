@@ -11,14 +11,30 @@ int mesh = static_cast<int>(std::round(150 * res));
 int nx = mesh;
 int ny = mesh;
 int nz = mesh;
-int fpoints = 19;
-int gpoints = 15;
 
-dfloat tau = 1.0f;
+// fluid velocity set
+#ifdef FD3Q19
+    int fpoints = 19;
+#elif defined(FD3Q27)
+    int fpoints = 27;
+#endif
+
+// phase velocity set
+#ifdef PD3Q15
+    int gpoints = 15;
+#elif defined(PD3Q19)
+    int gpoints = 19;
+#elif defined(PD3Q25)
+    int gpoints = 25;
+#elif defined(PD3Q27)
+    int gpoints = 27;
+#endif
+
+dfloat tau = 0.505f;
 dfloat cssq = 1.0f / 3.0f;
 dfloat omega = 1.0f / tau;
 dfloat sharp_c = 0.15f * 3.0f;
-dfloat sigma = 0.024f;
+dfloat sigma = 0.1f;
 
 dfloat *d_f, *d_g, *d_w, *d_w_g, *d_cix, *d_ciy, *d_ciz;
 dfloat *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;
@@ -34,9 +50,15 @@ dfloat *h_pxy = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_pxz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_pyz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 
-const dfloat cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
-const dfloat ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
-const dfloat ciz[19] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1 };
+#ifdef FD3Q19
+    const dfloat cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
+    const dfloat ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
+    const dfloat ciz[19] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1 };
+#elif defined(FD3Q27)
+    const dfloat cix[27] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 1, -1, -1, 1 };
+    const dfloat ciy[27] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1, 1, -1, 1, -1, -1, 1, 1, -1 };
+    const dfloat ciz[27] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1 };
+#endif
 
 void initializeVars() {
     size_t size = nx * ny * nz * sizeof(dfloat);            
