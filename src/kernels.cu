@@ -31,16 +31,6 @@ __global__ void phiCalc(
                                 g[IDX4D(i,j,k,12)] + g[IDX4D(i,j,k,13)] + g[IDX4D(i,j,k,14)] +
                                 g[IDX4D(i,j,k,15)] + g[IDX4D(i,j,k,16)] + g[IDX4D(i,j,k,17)] +
                                 g[IDX4D(i,j,k,18)];
-        #elif defined(PD3Q25)
-            phi[IDX3D(i,j,k)] = g[IDX4D(i,j,k,0)] + g[IDX4D(i,j,k,1)] + g[IDX4D(i,j,k,2)] +
-                                g[IDX4D(i,j,k,3)] + g[IDX4D(i,j,k,4)] + g[IDX4D(i,j,k,5)] +
-                                g[IDX4D(i,j,k,6)] + g[IDX4D(i,j,k,7)] + g[IDX4D(i,j,k,8)] +
-                                g[IDX4D(i,j,k,9)] + g[IDX4D(i,j,k,10)] + g[IDX4D(i,j,k,11)] +
-                                g[IDX4D(i,j,k,12)] + g[IDX4D(i,j,k,13)] + g[IDX4D(i,j,k,14)] +
-                                g[IDX4D(i,j,k,15)] + g[IDX4D(i,j,k,16)] + g[IDX4D(i,j,k,17)] +
-                                g[IDX4D(i,j,k,18)] + g[IDX4D(i,j,k,19)] + g[IDX4D(i,j,k,20)] +
-                                g[IDX4D(i,j,k,21)] + g[IDX4D(i,j,k,22)] + g[IDX4D(i,j,k,23)] +
-                                g[IDX4D(i,j,k,24)];
         #elif defined(PD3Q27)
             phi[IDX3D(i,j,k)] = g[IDX4D(i,j,k,0)] + g[IDX4D(i,j,k,1)] + g[IDX4D(i,j,k,2)] +
                                 g[IDX4D(i,j,k,3)] + g[IDX4D(i,j,k,4)] + g[IDX4D(i,j,k,5)] +
@@ -162,23 +152,25 @@ __global__ void momentiCalc(
                 f[IDX4D(i,j,k,12)] - f[IDX4D(i,j,k,15)] + f[IDX4D(i,j,k,16)] - f[IDX4D(i,j,k,17)] + f[IDX4D(i,j,k,18)]
             ) / rho[IDX3D(i,j,k)] + ffz[IDX3D(i,j,k)] * 0.5 / rho[IDX3D(i,j,k)];
         #elif defined(FD3Q27)
-            // CHECK IF CORRECT
             ux[IDX3D(i,j,k)] = (
-                f[IDX4D(i,j,k,1)] - f[IDX4D(i,j,k,2)] + f[IDX4D(i,j,k,7)] - f[IDX4D(i,j,k,8)] + f[IDX4D(i,j,k,9)] - f[IDX4D(i,j,k,10)] + 
-                f[IDX4D(i,j,k,13)] - f[IDX4D(i,j,k,14)] + f[IDX4D(i,j,k,15)] - f[IDX4D(i,j,k,16)] + f[IDX4D(i,j,k,19)] - f[IDX4D(i,j,k,20)] + 
-                f[IDX4D(i,j,k,21)] - f[IDX4D(i,j,k,22)] + f[IDX4D(i,j,k,23)] - f[IDX4D(i,j,k,24)] - f[IDX4D(i,j,k,25)] + f[IDX4D(i,j,k,26)]
+                f[IDX4D(i,j,k,1)] - f[IDX4D(i,j,k,2)] + f[IDX4D(i,j,k,7)] - f[IDX4D(i,j,k,8)] + f[IDX4D(i,j,k,9)] - 
+                f[IDX4D(i,j,k,10)] + f[IDX4D(i,j,k,13)] - f[IDX4D(i,j,k,14)] + f[IDX4D(i,j,k,15)] - f[IDX4D(i,j,k,16)] + 
+                f[IDX4D(i,j,k,19)] - f[IDX4D(i,j,k,20)] + f[IDX4D(i,j,k,21)] - f[IDX4D(i,j,k,22)] + f[IDX4D(i,j,k,23)] - 
+                f[IDX4D(i,j,k,24)] + f[IDX4D(i,j,k,25)] - f[IDX4D(i,j,k,26)]
             ) / rho[IDX3D(i,j,k)] + ffx[IDX3D(i,j,k)] * 0.5 / rho[IDX3D(i,j,k)];
             uy[IDX3D(i,j,k)] = (
-                f[IDX4D(i,j,k,3)] - f[IDX4D(i,j,k,4)] + f[IDX4D(i,j,k,7)] - f[IDX4D(i,j,k,8)] + f[IDX4D(i,j,k,11)] - f[IDX4D(i,j,k,12)] - 
-                f[IDX4D(i,j,k,13)] + f[IDX4D(i,j,k,14)] + f[IDX4D(i,j,k,17)] - f[IDX4D(i,j,k,18)] + f[IDX4D(i,j,k,19)] - f[IDX4D(i,j,k,20)] + 
-                f[IDX4D(i,j,k,21)] - f[IDX4D(i,j,k,22)] - f[IDX4D(i,j,k,23)] + f[IDX4D(i,j,k,24)] + f[IDX4D(i,j,k,25)] - f[IDX4D(i,j,k,26)]
+                f[IDX4D(i,j,k,3)] - f[IDX4D(i,j,k,4)] + f[IDX4D(i,j,k,7)] - f[IDX4D(i,j,k,8)] + f[IDX4D(i,j,k,11)] - 
+                f[IDX4D(i,j,k,12)] - f[IDX4D(i,j,k,13)] + f[IDX4D(i,j,k,14)] + f[IDX4D(i,j,k,17)] - f[IDX4D(i,j,k,18)] + 
+                f[IDX4D(i,j,k,19)] - f[IDX4D(i,j,k,20)] - f[IDX4D(i,j,k,21)] + f[IDX4D(i,j,k,22)] + f[IDX4D(i,j,k,23)] - 
+                f[IDX4D(i,j,k,24)] - f[IDX4D(i,j,k,25)] + f[IDX4D(i,j,k,26)]
             ) / rho[IDX3D(i,j,k)] + ffy[IDX3D(i,j,k)] * 0.5 / rho[IDX3D(i,j,k)];
             uz[IDX3D(i,j,k)] = (
-                f[IDX4D(i,j,k,5)] - f[IDX4D(i,j,k,6)] + f[IDX4D(i,j,k,9)] - f[IDX4D(i,j,k,10)] + f[IDX4D(i,j,k,11)] - f[IDX4D(i,j,k,12)] - 
-                f[IDX4D(i,j,k,15)] + f[IDX4D(i,j,k,16)] - f[IDX4D(i,j,k,17)] + f[IDX4D(i,j,k,18)] + f[IDX4D(i,j,k,19)] - f[IDX4D(i,j,k,20)] - 
-                f[IDX4D(i,j,k,21)] + f[IDX4D(i,j,k,22)] + f[IDX4D(i,j,k,23)] - f[IDX4D(i,j,k,24)] + f[IDX4D(i,j,k,25)] - f[IDX4D(i,j,k,26)]
+                f[IDX4D(i,j,k,5)] - f[IDX4D(i,j,k,6)] + f[IDX4D(i,j,k,9)] - f[IDX4D(i,j,k,10)] + f[IDX4D(i,j,k,11)] - 
+                f[IDX4D(i,j,k,12)] - f[IDX4D(i,j,k,15)] + f[IDX4D(i,j,k,16)] - f[IDX4D(i,j,k,17)] + f[IDX4D(i,j,k,18)] + 
+                f[IDX4D(i,j,k,19)] - f[IDX4D(i,j,k,20)] - f[IDX4D(i,j,k,21)] + f[IDX4D(i,j,k,22)] + f[IDX4D(i,j,k,23)] + 
+                f[IDX4D(i,j,k,24)] - f[IDX4D(i,j,k,25)] - f[IDX4D(i,j,k,26)]
             ) / rho[IDX3D(i,j,k)] + ffz[IDX3D(i,j,k)] * 0.5 / rho[IDX3D(i,j,k)];
-        #endif
+        #endif        
         dfloat uu = 0.5 * (ux[IDX3D(i,j,k)]*ux[IDX3D(i,j,k)] + uy[IDX3D(i,j,k)]*uy[IDX3D(i,j,k)] + uz[IDX3D(i,j,k)]*uz[IDX3D(i,j,k)]) / cssq;
         #ifdef FD3Q19
             rho[IDX3D(i,j,k)] = f[IDX4D(i,j,k,0)] + f[IDX4D(i,j,k,1)] + f[IDX4D(i,j,k,2)] +
@@ -188,7 +180,7 @@ __global__ void momentiCalc(
                                 f[IDX4D(i,j,k,12)] + f[IDX4D(i,j,k,13)] + f[IDX4D(i,j,k,14)] +
                                 f[IDX4D(i,j,k,15)] + f[IDX4D(i,j,k,16)] + f[IDX4D(i,j,k,17)] +
                                 f[IDX4D(i,j,k,18)];
-        #elif FD3Q27
+        #elif defined(FD3Q27)
             rho[IDX3D(i,j,k)] = f[IDX4D(i,j,k,0)] + f[IDX4D(i,j,k,1)] + f[IDX4D(i,j,k,2)] +
                                 f[IDX4D(i,j,k,3)] + f[IDX4D(i,j,k,4)] + f[IDX4D(i,j,k,5)] +
                                 f[IDX4D(i,j,k,6)] + f[IDX4D(i,j,k,7)] + f[IDX4D(i,j,k,8)] +
@@ -216,8 +208,7 @@ __global__ void momentiCalc(
             pxy[IDX3D(i,j,k)] = fneq[7] + fneq[8] - fneq[13] - fneq[14];
             pxz[IDX3D(i,j,k)] = fneq[9] + fneq[10] - fneq[15] - fneq[16];
             pyz[IDX3D(i,j,k)] = fneq[11] + fneq[12] - fneq[17] - fneq[18];
-        #elif FD3Q27
-            // CHECK IF CORRECT
+        #elif defined(FD3Q27)
             pxx[IDX3D(i,j,k)] = fneq[1] + fneq[2] + fneq[7] + fneq[8] + fneq[9] + fneq[10] + fneq[13] + fneq[14] + fneq[15] + fneq[16] + fneq[19] + 
                                 fneq[20] + fneq[21] + fneq[22] + fneq[23] + fneq[24] + fneq[25] + fneq[26];
             pyy[IDX3D(i,j,k)] = fneq[3] + fneq[4] + fneq[7] + fneq[8] + fneq[11] + fneq[12] + fneq[13] + fneq[14] + fneq[17] + fneq[18] + fneq[19] + 
@@ -284,6 +275,10 @@ __global__ void collisionCalc(
     }
 }
 
+__device__ int circularIndex(int idx, int size) {
+    return (idx % size + size) % size;
+}
+
 __global__ void streamingCalc(
     dfloat *g, const dfloat *cix, const dfloat *ciy, const dfloat *ciz,
     int nx, int ny, int nz, int gpoints
@@ -294,11 +289,13 @@ __global__ void streamingCalc(
 
     #define IDX4D(i,j,k,l) ((i) + nx * ((j) + ny * ((k) + nz * (l))))
 
-    for (int l = 0; l < gpoints; ++l) {
-        g[IDX4D(i,j,k,l)] = g[IDX4D(i + static_cast<int>(cix[l]),
-                                    j + static_cast<int>(ciy[l]),
-                                    k + static_cast<int>(ciz[l]),
-                                    l)];
+    if (i < nx && j < ny && k < nz) {
+        for (int l = 0; l < gpoints; ++l) {
+            int newI = circularIndex(i + static_cast<int>(cix[l]), nx);
+            int newJ = circularIndex(j + static_cast<int>(ciy[l]), ny);
+            int newK = circularIndex(k + static_cast<int>(ciz[l]), nz);
+            g[IDX4D(i, j, k, l)] = g[IDX4D(newI, newJ, newK, l)];
+        }
     }
 }
 

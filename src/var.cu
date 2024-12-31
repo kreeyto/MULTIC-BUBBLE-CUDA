@@ -24,8 +24,6 @@ int nz = mesh;
     int gpoints = 15;
 #elif defined(PD3Q19)
     int gpoints = 19;
-#elif defined(PD3Q25)
-    int gpoints = 25;
 #elif defined(PD3Q27)
     int gpoints = 27;
 #endif
@@ -55,9 +53,9 @@ dfloat *h_pyz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
     const dfloat ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
     const dfloat ciz[19] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1 };
 #elif defined(FD3Q27)
-    const dfloat cix[27] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 1, -1, -1, 1 };
-    const dfloat ciy[27] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1, 1, -1, 1, -1, -1, 1, 1, -1 };
-    const dfloat ciz[27] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1 };
+    const dfloat cix[27] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 1, -1, 1, -1 };
+    const dfloat ciy[27] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1, 1, -1, -1, 1, 1, -1, -1, 1 };
+    const dfloat ciz[27] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1, 1, -1, -1, 1, 1, 1, -1, -1 };
 #endif
 
 void initializeVars() {

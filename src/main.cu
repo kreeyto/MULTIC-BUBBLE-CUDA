@@ -68,13 +68,6 @@ int main(int argc, char* argv[]) {
             1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f, 1.0f / 18.0f,
             1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f
         };
-    #elif defined(PD3Q25)
-        const std::vector<dfloat> w_g = {
-            8.0f / 27.0f, 
-            2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 2.0f / 27.0f, 
-            1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 1.0f / 54.0f, 
-            1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f, 1.0f / 216.0f 
-        };
     #elif defined(PD3Q27)
         const std::vector <dfloat> w_g = {
             8.0f / 27.0f,
@@ -85,7 +78,6 @@ int main(int argc, char* argv[]) {
     #endif
 
     computeInitialCPU(phi, rho, w, w_g, f, g, nx, ny, nz, fpoints, gpoints, res);
-
     checkCudaErrors(cudaMemcpy(d_f, f.data(), nx * ny * nz * fpoints * sizeof(dfloat), cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(d_g, g.data(), nx * ny * nz * gpoints * sizeof(dfloat), cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(d_phi, phi.data(), nx * ny * nz * sizeof(dfloat), cudaMemcpyHostToDevice));

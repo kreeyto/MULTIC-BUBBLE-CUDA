@@ -44,6 +44,10 @@ __global__ void collisionCalc(
     int nx, int ny, int nz
 );
 
+__device__ int circularIndex(
+    int idx, int size
+); 
+
 __global__ void streamingCalc(
     dfloat *g, const dfloat *cix, const dfloat *ciy, const dfloat *ciz,
     int nx, int ny, int nz, int gpoints
