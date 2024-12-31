@@ -78,6 +78,16 @@ int main(int argc, char* argv[]) {
     #endif
 
     computeInitialCPU(phi, rho, w, w_g, f, g, nx, ny, nz, fpoints, gpoints, res);
+    dfloat max_val = 0.0f;
+    for (int k = 0; k < nz; ++k) {
+        for (int j = 0; j < ny; ++j) {
+            for (int i = 0; i < nx; ++i) {
+                dfloat val = phi[i + nx*(j + ny*k)];
+                if (val > max_val) max_val = val;
+            }
+        }
+    }
+    std::cout << "Valor maximo inicial de phi = " << max_val << std::endl;
     checkCudaErrors(cudaMemcpy(d_f, f.data(), nx * ny * nz * fpoints * sizeof(dfloat), cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(d_g, g.data(), nx * ny * nz * gpoints * sizeof(dfloat), cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(d_phi, phi.data(), nx * ny * nz * sizeof(dfloat), cudaMemcpyHostToDevice));
