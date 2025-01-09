@@ -1,5 +1,5 @@
-#ifndef UTILS_CUH
-#define UTILS_CUH
+#ifndef AUXFUNCTIONS_CUH
+#define AUXFUNCTIONS_CUH
 #include <vector>
 #include <iostream>
 #include <iomanip>

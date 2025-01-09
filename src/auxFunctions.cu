@@ -1,4 +1,4 @@
-#include "utils.cuh"
+#include "auxFunctions.cuh"
 #include "var.cuh"
 #include <cuda_runtime.h>
 #include <fstream>
@@ -33,10 +33,10 @@ void computeInitialCPU(
     for (int k = 1; k < nz-1; ++k) {
         for (int j = 1; j < ny-1; ++j) {
             for (int i = 1; i < nx-1; ++i) {
-                dfloat Ri = std::sqrt((i - nx / 2.0f) * (i - nx / 2.0f) / 4.0f +
-                                        (j - ny / 2.0f) * (j - ny / 2.0f) +
-                                        (k - nz / 2.0f) * (k - nz / 2.0f));
-                phi[IDX3D(i,j,k)] = 0.5f + 0.5f * std::tanh(2.0f * (20 * res - Ri) / (3.0f * res));
+                dfloat Ri = std::sqrt((i - nx / 2.0) * (i - nx / 2.0) / 4.0 +
+                                        (j - ny / 2.0) * (j - ny / 2.0) +
+                                        (k - nz / 2.0) * (k - nz / 2.0));
+                phi[IDX3D(i,j,k)] = 0.5 + 0.5 * std::tanh(2.0 * (20 - Ri) / (3.0 * res));
             }
         }
     }

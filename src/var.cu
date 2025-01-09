@@ -5,7 +5,7 @@
 
 #include "precision.cuh"
 
-dfloat res = 1.0f;
+dfloat res = 1.0;
 int mesh = static_cast<int>(std::round(150 * res));
 
 int nx = mesh;
@@ -28,11 +28,11 @@ int nz = mesh;
     int gpoints = 27;
 #endif
 
-dfloat tau = 0.505f;
-dfloat cssq = 1.0f / 3.0f;
-dfloat omega = 1.0f / tau;
-dfloat sharp_c = 0.15f * 3.0f;
-dfloat sigma = 0.1f;
+dfloat tau = 0.505;
+dfloat cssq = 1.0 / 3.0;
+dfloat omega = 1.0 / tau;
+dfloat sharp_c = 0.15 * 3.0;
+dfloat sigma = 0.1;
 
 dfloat *d_f, *d_g, *d_w, *d_w_g, *d_cix, *d_ciy, *d_ciz;
 dfloat *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;
@@ -40,6 +40,7 @@ dfloat *d_curvature, *d_ffx, *d_ffy, *d_ffz;
 dfloat *d_ux, *d_uy, *d_uz, *d_pxx, *d_pyy, *d_pzz;
 dfloat *d_pxy, *d_pxz, *d_pyz, *d_rho, *d_phi;
 dfloat *d_fneq;
+dfloat *d_grad_fix, *d_grad_fiy, *d_grad_fiz, *d_uu;
 
 dfloat *h_pxx = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_pyy = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
@@ -48,6 +49,7 @@ dfloat *h_pxy = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_pxz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_pyz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 
+// TODO: dfloat -> int
 #ifdef FD3Q19
     const dfloat cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
     const dfloat ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
@@ -64,6 +66,7 @@ void initializeVars() {
     size_t g_size = nx * ny * nz * gpoints * sizeof(dfloat); 
     size_t vs_size = fpoints * sizeof(dfloat);
     size_t pf_size = gpoints * sizeof(dfloat);
+    size_t single_size = sizeof(dfloat);
 
     auto IDX3D = [&](int i, int j, int k) {
         return ((i) + nx * ((j) + ny * (k)));
@@ -72,12 +75,12 @@ void initializeVars() {
     for (int k = 0; k < nz; ++k) {
         for (int j = 0; j < ny; ++j) {
             for (int i = 0; i < nx; ++i) {
-                h_pxx[IDX3D(i,j,k)] = 1.0f;
-                h_pyy[IDX3D(i,j,k)] = 1.0f;
-                h_pzz[IDX3D(i,j,k)] = 1.0f;
-                h_pxy[IDX3D(i,j,k)] = 1.0f;
-                h_pxz[IDX3D(i,j,k)] = 1.0f;
-                h_pyz[IDX3D(i,j,k)] = 1.0f;
+                h_pxx[IDX3D(i,j,k)] = 1.0;
+                h_pyy[IDX3D(i,j,k)] = 1.0;
+                h_pzz[IDX3D(i,j,k)] = 1.0;
+                h_pxy[IDX3D(i,j,k)] = 1.0;
+                h_pxz[IDX3D(i,j,k)] = 1.0;
+                h_pyz[IDX3D(i,j,k)] = 1.0;
             }
         }
     }
@@ -112,19 +115,24 @@ void initializeVars() {
     cudaMalloc((void **)&d_ciz, vs_size);
     cudaMalloc((void **)&d_fneq, vs_size);
 
-    cudaMemset(d_ux, 0, size);
-    cudaMemset(d_uy, 0, size);
-    cudaMemset(d_uz, 0, size);
-    cudaMemset(d_normx, 0, size);
-    cudaMemset(d_normy, 0, size);
-    cudaMemset(d_normz, 0, size);
-    cudaMemset(d_curvature, 0, size);
-    cudaMemset(d_indicator, 0, size);
-    cudaMemset(d_ffx, 0, size);
-    cudaMemset(d_ffy, 0, size);
-    cudaMemset(d_ffz, 0, size);
-    cudaMemset(d_mod_grad, 0, size);
-    cudaMemset(d_fneq, 0, vs_size);
+    cudaMalloc((void **)&d_grad_fix, single_size);
+    cudaMalloc((void **)&d_grad_fiy, single_size);
+    cudaMalloc((void **)&d_grad_fiz, single_size);
+    cudaMalloc((void **)&d_uu, single_size);
+
+    cudaMemset(d_ux, 0.0, size);
+    cudaMemset(d_uy, 0.0, size);
+    cudaMemset(d_uz, 0.0, size);
+    cudaMemset(d_normx, 0.0, size);
+    cudaMemset(d_normy, 0.0, size);
+    cudaMemset(d_normz, 0.0, size);
+    cudaMemset(d_curvature, 0.0, size);
+    cudaMemset(d_indicator, 0.0, size);
+    cudaMemset(d_ffx, 0.0, size);
+    cudaMemset(d_ffy, 0.0, size);
+    cudaMemset(d_ffz, 0.0, size);
+    cudaMemset(d_mod_grad, 0.0, size);
+    cudaMemset(d_fneq, 0.0, vs_size);
 
     cudaMemcpy(d_pxx, h_pxx, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_pyy, h_pyy, size, cudaMemcpyHostToDevice);
@@ -142,6 +150,5 @@ void initializeVars() {
     free(h_pxy);
     free(h_pxz);
     free(h_pyz);
-
 }
 
