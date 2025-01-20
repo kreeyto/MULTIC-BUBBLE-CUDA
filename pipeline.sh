@@ -7,7 +7,7 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 RESET='\033[0m'
 
-BASE_DIR=~/Desktop/Bubble-GPU
+BASE_DIR=$(dirname "$(readlink -f "$0")")
 
 FLUID_MODEL=$1
 PHASE_MODEL=$2

@@ -5,7 +5,7 @@ if [ "$#" -lt 3 ]; then
     exit 1
 fi
 
-ID=$1
+ID=$1   
 FLUID_MODEL=$2
 PHASE_MODEL=$3
 

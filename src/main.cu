@@ -18,15 +18,25 @@ int main(int argc, char* argv[]) {
     std::string fluid_model = argv[1];
     std::string phase_model = argv[2];
     std::string id = argv[3];
-    std::string base_dir = "/home/breno/Desktop/Bubble-GPU/bin/";
+    std::string base_dir;   
+    #ifdef _WIN32
+        base_dir = "..\\";
+    #else
+        base_dir = "../";
+    #endif
     std::string model_dir = base_dir + fluid_model + "_" + phase_model + "/";
     std::string sim_dir = model_dir + id + "/";
-    int ret = system(("mkdir -p " + sim_dir).c_str());
+    #ifdef _WIN32
+        std::string mkdir_command = "mkdir \"" + sim_dir + "\"";
+    #else
+        std::string mkdir_command = "mkdir -p \"" + sim_dir + "\"";
+    #endif
+    int ret = system(mkdir_command.c_str());
     (void)ret; 
     std::string info_file = sim_dir + id + "_info.txt";
 
     // ========================= //
-    int stamp = 100, nsteps = 1000;
+    int stamp = 1, nsteps = 10;
     // ========================= //
     initializeVars();
     generateSimulationInfoFile(info_file, nx, ny, nz, stamp, nsteps, tau, id, fluid_model);
