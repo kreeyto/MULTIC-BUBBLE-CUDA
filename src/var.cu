@@ -49,7 +49,6 @@ dfloat *h_pxy = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_pxz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_pyz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 
-// TODO: dfloat -> int
 #ifdef FD3Q19
     const dfloat cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
     const dfloat ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };

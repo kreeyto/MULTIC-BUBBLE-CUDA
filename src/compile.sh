@@ -5,10 +5,16 @@ CC=86
 FLUID_MODEL=$1
 PHASE_MODEL=$2
 ID=$3
+SAVE_BINARY=$4
 
 BASE_DIR=$(dirname "$0")/..
 SRC_DIR=${BASE_DIR}/src
-OUTPUT_DIR=${BASE_DIR}/bin/${FLUID_MODEL}_${PHASE_MODEL}
+
+if [ "$SAVE_BINARY" -eq 0 ]; then
+    OUTPUT_DIR=${BASE_DIR}/matlabFiles/${FLUID_MODEL}_${PHASE_MODEL}
+else
+    OUTPUT_DIR=${BASE_DIR}/bin/${FLUID_MODEL}_${PHASE_MODEL}
+fi
 
 mkdir -p ${OUTPUT_DIR}
 

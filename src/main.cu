@@ -11,35 +11,52 @@
 #include "precision.cuh"
 
 int main(int argc, char* argv[]) {
-    if (argc < 4) {
-        std::cerr << "Erro: Uso: " << argv[0] << " <fluid_model> <phase_model> <id>" << std::endl;
+    if (argc < 5) {
+        std::cerr << "Erro: Uso: " << argv[0] << " F<fluid velocity set> P<phase field velocity set> <id> <save_binary>" << std::endl;
         return 1;
     }
     std::string fluid_model = argv[1];
     std::string phase_model = argv[2];
     std::string id = argv[3];
+    bool save_binary = std::stoi(argv[4]);
+
     std::string base_dir;   
     #ifdef _WIN32
         base_dir = "..\\";
     #else
         base_dir = "../";
     #endif
-    std::string model_dir = base_dir + fluid_model + "_" + phase_model + "/";
+    std::string model_dir = base_dir + "bin/" + fluid_model + "_" + phase_model + "/";
     std::string sim_dir = model_dir + id + "/";
-    #ifdef _WIN32
-        std::string mkdir_command = "mkdir \"" + sim_dir + "\"";
-    #else
-        std::string mkdir_command = "mkdir -p \"" + sim_dir + "\"";
-    #endif
-    int ret = system(mkdir_command.c_str());
-    (void)ret; 
-    std::string info_file = sim_dir + id + "_info.txt";
+
+    std::string matlab_dir = base_dir + "matlabFiles/" + fluid_model + "_" + phase_model + "/" + id + "/";
+    if (save_binary) {
+        #ifdef _WIN32
+            std::string mkdir_command = "mkdir \"" + sim_dir + "\"";
+        #else
+            std::string mkdir_command = "mkdir -p \"" + sim_dir + "\"";
+        #endif
+        int ret = system(mkdir_command.c_str());
+        (void)ret;
+    } else {
+        #ifdef _WIN32
+            std::string mkdir_command = "mkdir \"" + matlab_dir + "\"";
+        #else
+            std::string mkdir_command = "mkdir -p \"" + matlab_dir + "\"";
+        #endif
+        int ret = system(mkdir_command.c_str());
+        (void)ret;
+    }    
 
     // ========================= //
     int stamp = 1, nsteps = 10;
     // ========================= //
     initializeVars();
-    generateSimulationInfoFile(info_file, nx, ny, nz, stamp, nsteps, tau, id, fluid_model);
+
+    if (save_binary) {
+        std::string info_file = sim_dir + id + "_info.txt";
+        generateSimulationInfoFile(info_file, nx, ny, nz, stamp, nsteps, tau, id, fluid_model);
+    }
 
     std::vector<dfloat> f(nx * ny * nz * fpoints, 0.0);
     std::vector<dfloat> g(nx * ny * nz * gpoints, 0.0);
@@ -206,12 +223,34 @@ int main(int argc, char* argv[]) {
             // phi 
             std::ostringstream filename_phi;
             checkCudaErrors(cudaMemcpy(phi_host.data(), d_phi, nx * ny * nz * sizeof(dfloat), cudaMemcpyDeviceToHost));
-            filename_phi << sim_dir << id << "_phi" << std::setw(6) << std::setfill('0') << t << ".bin";
-            std::ofstream file_phi(filename_phi.str(), std::ios::binary);
-            file_phi.write(reinterpret_cast<const char*>(phi_host.data()), phi_host.size() * sizeof(dfloat));
-            file_phi.close();
+            
+            if (save_binary) {
+                std::ostringstream filename_phi_bin;
+                filename_phi_bin << sim_dir << id << "_phi" << std::setw(6) << std::setfill('0') << t << ".bin";
+                std::ofstream file_phi_bin(filename_phi_bin.str(), std::ios::binary);
+                file_phi_bin.write(reinterpret_cast<const char*>(phi_host.data()), phi_host.size() * sizeof(dfloat));
+                file_phi_bin.close();
+            } else {
+                std::ostringstream filename_phi_txt;
+                filename_phi_txt << matlab_dir << id << "_phi" << t << ".txt";
+                std::ofstream file_phi_txt(filename_phi_txt.str());
+                if (file_phi_txt.is_open()) {
+                    for (int z = 0; z < nz; ++z) {
+                        for (int y = 0; y < ny; ++y) {
+                            for (int x = 0; x < nx; ++x) {
+                                int index = x + nx * (y + ny * z);
+                                file_phi_txt << phi_host[index] << " ";
+                            }
+                            file_phi_txt << "\n";
+                        }
+                        file_phi_txt << "\n";
+                    }
+                    file_phi_txt.close();
+                }
+            }
 
-            std::cout << "Passo " << t << ": Dados salvos em " << sim_dir << std::endl;
+            std::cout << "Passo " << t << ": Dados salvos em " << (save_binary ? sim_dir : matlab_dir) << std::endl;
+
         }
         
     }
