@@ -37,12 +37,7 @@ Bubble-GPU é um projeto para simulações de fluidos usando o método Lattice B
      - `matlabFiles/<fluid_model>_<phase_model>/<id>/` (se `save_binary=0`).
 
 3. **Pós-Processamento**:
-   Caso `save_binary=1`, o script também executará o pós-processamento automaticamente:
-
-   ```bash
-   cd post
-   ./post.sh <id> <fluid_model> <phase_model>
-   ```
+   Caso `save_binary=1`, o script também executará o pós-processamento automaticamente.
 
 ## Exemplos de Execução
 
@@ -54,11 +49,5 @@ Bubble-GPU é um projeto para simulações de fluidos usando o método Lattice B
 - **Simulação salvando binários**:
   ```bash
   ./pipeline.sh FD3Q19 PD3Q15 002 1
-  ```
-
-- **Pós-Processamento**:
-  ```bash
-  cd post
-  ./post.sh 002 FD3Q19 PD3Q15
   ```
 
