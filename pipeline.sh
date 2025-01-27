@@ -61,8 +61,8 @@ fi
 echo -e "${YELLOW}Indo para ${CYAN}$BASE_DIR/src${RESET}"
 cd $BASE_DIR/src || { echo -e "${RED}Erro: Diretório ${CYAN}$BASE_DIR/src${RED} não encontrado!${RESET}"; exit 1; }
 
-echo -e "${BLUE}Executando: ${CYAN}sh compile.sh ${FLUID_MODEL} ${PHASE_MODEL} ${ID} ${SAVE_BINARY}${RESET}"
-sh compile.sh ${FLUID_MODEL} ${PHASE_MODEL} ${ID} ${SAVE_BINARY} || { echo -e "${RED}Erro na execução do script compile.sh${RESET}"; exit 1; }
+echo -e "${BLUE}Executando: ${CYAN}sh compile.sh ${FLUID_MODEL} ${PHASE_MODEL} ${ID} ${SAVE_BINARY} 0${RESET}"
+sh compile.sh ${FLUID_MODEL} ${PHASE_MODEL} ${ID} ${SAVE_BINARY} 0 || { echo -e "${RED}Erro na execução do script compile.sh${RESET}"; exit 1; }
 
 EXECUTABLE=$(realpath "${MODEL_DIR}/${ID}sim_${FLUID_MODEL}_${PHASE_MODEL}_sm86")
 

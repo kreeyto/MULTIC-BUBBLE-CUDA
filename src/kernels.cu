@@ -59,13 +59,13 @@ __global__ void gradCalc(
     if (i > 0 && i < nx-1 && j > 0 && j < ny-1 && k > 0 && k < nz-1) {
         *grad_fix = 0.0; *grad_fiy = 0.0; *grad_fiz = 0.0;
         for (int l = 0; l < fpoints; ++l) {
-            *grad_fix = *grad_fix + 3 * w[l] * cix[l] * phi[IDX3D(i + static_cast<int>(cix[l]),
+            *grad_fix += + 3 * w[l] * cix[l] * phi[IDX3D(i + static_cast<int>(cix[l]),
                                                         j + static_cast<int>(ciy[l]),
                                                         k + static_cast<int>(ciz[l]))];
-            *grad_fiy = *grad_fiy + 3 * w[l] * ciy[l] * phi[IDX3D(i + static_cast<int>(cix[l]),
+            *grad_fiy += + 3 * w[l] * ciy[l] * phi[IDX3D(i + static_cast<int>(cix[l]),
                                                         j + static_cast<int>(ciy[l]),
                                                         k + static_cast<int>(ciz[l]))];
-            *grad_fiz = *grad_fiz + 3 * w[l] * ciz[l] * phi[IDX3D(i + static_cast<int>(cix[l]),
+            *grad_fiz += + 3 * w[l] * ciz[l] * phi[IDX3D(i + static_cast<int>(cix[l]),
                                                         j + static_cast<int>(ciy[l]),
                                                         k + static_cast<int>(ciz[l]))];
         }
@@ -137,9 +137,9 @@ __global__ void forceCalc(
     #define IDX3D(i,j,k) ((i) + nx * ((j) + ny * (k)))
 
     if (i > 0 && i < nx-1 && j > 0 && j < ny-1 && k > 0 && k < nz-1) {
-        ffx[IDX3D(i,j,k)] = sigma * curvature[IDX3D(i,j,k)] * normx[IDX3D(i,j,k)] * indicator[IDX3D(i,j,k)];
-        ffy[IDX3D(i,j,k)] = sigma * curvature[IDX3D(i,j,k)] * normy[IDX3D(i,j,k)] * indicator[IDX3D(i,j,k)];
-        ffz[IDX3D(i,j,k)] = sigma * curvature[IDX3D(i,j,k)] * normz[IDX3D(i,j,k)] * indicator[IDX3D(i,j,k)];
+        *ffx = sigma * curvature[IDX3D(i,j,k)] * normx[IDX3D(i,j,k)] * indicator[IDX3D(i,j,k)];
+        *ffy = sigma * curvature[IDX3D(i,j,k)] * normy[IDX3D(i,j,k)] * indicator[IDX3D(i,j,k)];
+        *ffz = sigma * curvature[IDX3D(i,j,k)] * normz[IDX3D(i,j,k)] * indicator[IDX3D(i,j,k)];
     }
 }
 
@@ -400,7 +400,7 @@ __global__ void fgBoundary(
     #define IDX3D(i,j,k) ((i) + nx * ((j) + ny * (k)))
     #define IDX4D(i,j,k,l) ((i) + nx * ((j) + ny * ((k) + nz * (l))))
 
-    if (i == 0 || i == nx-1 || j == 0 || j == ny-1 || k == 0 || k == ny-1) {
+    if (i == 0 || i == nx-1 || j == 0 || j == ny-1 || k == 0 || k == nz-1) {
         for (int l = 0; l < fpoints; ++l) {
             if (i + static_cast<int>(cix[l]) >= 0 && j + static_cast<int>(ciy[l]) >= 0 && k + static_cast<int>(ciz[l]) >= 0) {
                 f[IDX4D(i + static_cast<int>(cix[l]),

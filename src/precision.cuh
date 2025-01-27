@@ -2,6 +2,7 @@
 #ifndef PRECISION_H
 #define PRECISION_H
 
+using namespace std;
 #define SINGLE_PRECISION
 
 #ifdef SINGLE_PRECISION

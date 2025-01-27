@@ -5,8 +5,8 @@
 
 #include "precision.cuh"
 
-dfloat res = 1.0;
-int mesh = static_cast<int>(std::round(150 * res));
+dfloat res = 1;
+int mesh = static_cast<int>(round(150 * res));
 
 int nx = mesh;
 int ny = mesh;
@@ -28,11 +28,11 @@ int nz = mesh;
     int gpoints = 27;
 #endif
 
-dfloat tau = 0.505;
+dfloat tau = 1.0;
 dfloat cssq = 1.0 / 3.0;
 dfloat omega = 1.0 / tau;
 dfloat sharp_c = 0.15 * 3.0;
-dfloat sigma = 0.1;
+dfloat sigma = 0.024;
 
 dfloat *d_f, *d_g, *d_w, *d_w_g, *d_cix, *d_ciy, *d_ciz;
 dfloat *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;

@@ -12,59 +12,62 @@
 
 int main(int argc, char* argv[]) {
     if (argc < 5) {
-        std::cerr << "Erro: Uso: " << argv[0] << " F<fluid velocity set> P<phase field velocity set> <id> <save_binary>" << std::endl;
+        cerr << "Erro: Uso: " << argv[0] << " F<fluid velocity set> P<phase field velocity set> <id> <save_binary>" << endl;
         return 1;
     }
-    std::string fluid_model = argv[1];
-    std::string phase_model = argv[2];
-    std::string id = argv[3];
-    bool save_binary = std::stoi(argv[4]);
+    string fluid_model = argv[1];
+    string phase_model = argv[2];
+    string id = argv[3];
+    bool save_binary = stoi(argv[4]);
+    bool debug_mode = (argc > 5) ? stoi(argv[5]) : 0; 
 
-    std::string base_dir;   
+    string base_dir;   
     #ifdef _WIN32
         base_dir = "..\\";
     #else
         base_dir = "../";
     #endif
-    std::string model_dir = base_dir + "bin/" + fluid_model + "_" + phase_model + "/";
-    std::string sim_dir = model_dir + id + "/";
+    string model_dir = base_dir + "bin/" + fluid_model + "_" + phase_model + "/";
+    string sim_dir = model_dir + id + "/";
+    string matlab_dir = base_dir + "matlabFiles/" + fluid_model + "_" + phase_model + "/" + id + "/";
 
-    std::string matlab_dir = base_dir + "matlabFiles/" + fluid_model + "_" + phase_model + "/" + id + "/";
-    if (save_binary) {
-        #ifdef _WIN32
-            std::string mkdir_command = "mkdir \"" + sim_dir + "\"";
-        #else
-            std::string mkdir_command = "mkdir -p \"" + sim_dir + "\"";
-        #endif
-        int ret = system(mkdir_command.c_str());
-        (void)ret;
-    } else {
-        #ifdef _WIN32
-            std::string mkdir_command = "mkdir \"" + matlab_dir + "\"";
-        #else
-            std::string mkdir_command = "mkdir -p \"" + matlab_dir + "\"";
-        #endif
-        int ret = system(mkdir_command.c_str());
-        (void)ret;
-    }    
+    if (!debug_mode) { 
+        if (save_binary) {
+            #ifdef _WIN32
+                string mkdir_command = "mkdir \"" + sim_dir + "\"";
+            #else
+                string mkdir_command = "mkdir -p \"" + sim_dir + "\"";
+            #endif
+            int ret = system(mkdir_command.c_str());
+            (void)ret;
+        } else {
+            #ifdef _WIN32
+                string mkdir_command = "mkdir \"" + matlab_dir + "\"";
+            #else
+                string mkdir_command = "mkdir -p \"" + matlab_dir + "\"";
+            #endif
+            int ret = system(mkdir_command.c_str());
+            (void)ret;
+        }
+    }
 
     // ========================= //
     int stamp = 1, nsteps = 10;
     // ========================= //
     initializeVars();
 
-    if (save_binary) {
-        std::string info_file = sim_dir + id + "_info.txt";
+    if (!debug_mode && save_binary) {
+        string info_file = sim_dir + id + "_info.txt";
         generateSimulationInfoFile(info_file, nx, ny, nz, stamp, nsteps, tau, id, fluid_model);
     }
 
-    std::vector<dfloat> f(nx * ny * nz * fpoints, 0.0);
-    std::vector<dfloat> g(nx * ny * nz * gpoints, 0.0);
-    std::vector<dfloat> phi(nx * ny * nz, 0.0);
-    std::vector<dfloat> rho(nx * ny * nz, 1.0); 
+    vector<dfloat> f(nx * ny * nz * fpoints, 0.0);
+    vector<dfloat> g(nx * ny * nz * gpoints, 0.0);
+    vector<dfloat> phi(nx * ny * nz, 0.0);
+    vector<dfloat> rho(nx * ny * nz, 1.0); 
 
     // =========================== FLUID WEIGHTS =========================== //
-    const std::vector<dfloat> w = {
+    const vector<dfloat> w = {
         1.0 / 3.0, 
         1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0,
         1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0
@@ -72,7 +75,7 @@ int main(int argc, char* argv[]) {
     // ===================================================================== //
 
     // ======================== PHASE FIELD WEIGHTS ======================== //
-    const std::vector<dfloat> w_g = {
+    const vector<dfloat> w_g = {
         2.0 / 9.0, 
         1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0,
         1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0
@@ -92,12 +95,11 @@ int main(int argc, char* argv[]) {
                    (ny + threadsPerBlock.y - 1) / threadsPerBlock.y,
                    (nz + threadsPerBlock.z - 1) / threadsPerBlock.z);
 
-    std::vector<dfloat> phi_host(nx * ny * nz);
-    std::vector<dfloat> rho_host(nx * ny * nz);
+    vector<dfloat> phi_host(nx * ny * nz);
 
     for (int t = 0; t < nsteps; ++t) {
 
-        std::cout << "Passo " << t << " de " << nsteps << " iniciado..." << std::endl;
+        cout << "Passo " << t << " de " << nsteps << " iniciado..." << endl;
 
         phiCalc<<<numBlocks, threadsPerBlock>>>(
             d_phi, d_g, 
@@ -171,7 +173,7 @@ int main(int argc, char* argv[]) {
             nx, ny, nz, d_fneq
         );
         cudaDeviceSynchronize();
-        
+
         uuCalc<<<numBlocks, threadsPerBlock>>>(
             d_ux, d_uy, d_uz, d_uu,
             cssq, nx, ny, nz
@@ -218,22 +220,19 @@ int main(int argc, char* argv[]) {
         );
         cudaDeviceSynchronize();
 
-        if (t % stamp == 0) {
-            
-            // phi 
-            std::ostringstream filename_phi;
+        if (!debug_mode && t % stamp == 0) {
             checkCudaErrors(cudaMemcpy(phi_host.data(), d_phi, nx * ny * nz * sizeof(dfloat), cudaMemcpyDeviceToHost));
             
             if (save_binary) {
-                std::ostringstream filename_phi_bin;
-                filename_phi_bin << sim_dir << id << "_phi" << std::setw(6) << std::setfill('0') << t << ".bin";
-                std::ofstream file_phi_bin(filename_phi_bin.str(), std::ios::binary);
+                ostringstream filename_phi_bin;
+                filename_phi_bin << sim_dir << id << "_phi" << setw(6) << setfill('0') << t << ".bin";
+                ofstream file_phi_bin(filename_phi_bin.str(), ios::binary);
                 file_phi_bin.write(reinterpret_cast<const char*>(phi_host.data()), phi_host.size() * sizeof(dfloat));
                 file_phi_bin.close();
             } else {
-                std::ostringstream filename_phi_txt;
+                ostringstream filename_phi_txt;
                 filename_phi_txt << matlab_dir << id << "_phi" << t << ".txt";
-                std::ofstream file_phi_txt(filename_phi_txt.str());
+                ofstream file_phi_txt(filename_phi_txt.str());
                 if (file_phi_txt.is_open()) {
                     for (int z = 0; z < nz; ++z) {
                         for (int y = 0; y < ny; ++y) {
@@ -249,8 +248,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            std::cout << "Passo " << t << ": Dados salvos em " << (save_binary ? sim_dir : matlab_dir) << std::endl;
-
+            cout << "Passo " << t << ": Dados salvos em " << (save_binary ? sim_dir : matlab_dir) << endl;
         }
         
     }

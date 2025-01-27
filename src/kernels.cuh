@@ -105,5 +105,4 @@ __global__ void boundaryConditions(
     dfloat *phi, int nx, int ny, int nz
 );
 
-
 #endif

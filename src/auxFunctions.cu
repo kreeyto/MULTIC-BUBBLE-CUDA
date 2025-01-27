@@ -7,6 +7,7 @@
 #include <string>
 #include <cstdlib>
 #include <stdexcept>
+#include "errorDef.cuh"
 
 #include "precision.cuh"
 
@@ -19,8 +20,8 @@ void freeMemory(dfloat **pointers, int count) {
 }
 
 void computeInitialCPU(
-    std::vector<dfloat> &phi, std::vector<dfloat> &rho, const std::vector<dfloat> &w, const std::vector<dfloat> &w_g, 
-    std::vector<dfloat> &f, std::vector<dfloat> &g, int nx, int ny, int nz, int fpoints, int gpoints, dfloat res
+    vector<dfloat> &phi, vector<dfloat> &rho, const vector<dfloat> &w, const vector<dfloat> &w_g, 
+    vector<dfloat> &f, vector<dfloat> &g, int nx, int ny, int nz, int fpoints, int gpoints, dfloat res
 ) {
 
     auto IDX3D = [&](int i, int j, int k) {
@@ -33,10 +34,10 @@ void computeInitialCPU(
     for (int k = 1; k < nz-1; ++k) {
         for (int j = 1; j < ny-1; ++j) {
             for (int i = 1; i < nx-1; ++i) {
-                dfloat Ri = std::sqrt((i - nx / 2.0) * (i - nx / 2.0) / 4.0 +
+                dfloat Ri = sqrt((i - nx / 2.0) * (i - nx / 2.0) / 4.0 +
                                         (j - ny / 2.0) * (j - ny / 2.0) +
                                         (k - nz / 2.0) * (k - nz / 2.0));
-                phi[IDX3D(i,j,k)] = 0.5 + 0.5 * std::tanh(2.0 * (20 - Ri) / (3.0 * res));
+                phi[IDX3D(i,j,k)] = 0.5 + 0.5 * tanh(2.0 * (20 - Ri) / (3.0 * res));
             }
         }
     }
@@ -57,14 +58,14 @@ void computeInitialCPU(
 }
 
 void generateSimulationInfoFile(
-    const std::string& filepath, int nx, int ny, int nz, int stamp, int nsteps, dfloat tau, 
-    const std::string& sim_id, const std::string& fluid_model
+    const string& filepath, const int nx, const int ny, const int nz, const int stamp, const int nsteps, const dfloat tau, 
+    const string& sim_id, const string& fluid_model
 ) {
     try {
-        std::ofstream file(filepath);
+        ofstream file(filepath);
 
         if (!file.is_open()) {
-            std::cerr << "Erro ao abrir o arquivo: " << filepath << std::endl;
+            cerr << "Erro ao abrir o arquivo: " << filepath << endl;
             return;
         }
 
@@ -87,8 +88,8 @@ void generateSimulationInfoFile(
              << "--------------------------------------------------------------------------------\n";
 
         file.close();
-        std::cout << "Arquivo de informações da simulação criado em: " << filepath << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "Erro ao gerar o arquivo de informações: " << e.what() << std::endl;
+        cout << "Arquivo de informações da simulação criado em: " << filepath << endl;
+    } catch (const exception& e) {
+        cerr << "Erro ao gerar o arquivo de informações: " << e.what() << endl;
     }
 }
