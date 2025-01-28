@@ -25,11 +25,11 @@ void computeInitialCPU(
 ) {
 
     auto IDX3D = [&](int i, int j, int k) {
-        return ((i) + nx * ((j) + ny * (k)));
+        return ((k) * (nx * ny) + (j) * (nx) + (i));
     };
     auto IDX4D = [&](int i, int j, int k, int l) {
-        return ((i) + nx * ((j) + ny * ((k) + nz * (l))));
-    };
+        return ((l) * (nx * ny * nz) + (k) * (nx * ny) + (j) * (nx) + (i));
+    };    
 
     for (int k = 1; k < nz-1; ++k) {
         for (int j = 1; j < ny-1; ++j) {

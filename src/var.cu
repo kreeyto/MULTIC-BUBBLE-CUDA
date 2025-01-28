@@ -5,12 +5,12 @@
 
 #include "precision.cuh"
 
-dfloat res = 1;
+dfloat res = 1.0;
 int mesh = static_cast<int>(round(150 * res));
 
 int nx = mesh;
 int ny = mesh;
-int nz = mesh;
+int nz = mesh;  
 
 // fluid velocity set
 #ifdef FD3Q19
@@ -32,7 +32,7 @@ dfloat tau = 1.0;
 dfloat cssq = 1.0 / 3.0;
 dfloat omega = 1.0 / tau;
 dfloat sharp_c = 0.15 * 3.0;
-dfloat sigma = 0.024;
+dfloat sigma = 0.1;
 
 dfloat *d_f, *d_g, *d_w, *d_w_g, *d_cix, *d_ciy, *d_ciz;
 dfloat *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;
@@ -40,7 +40,7 @@ dfloat *d_curvature, *d_ffx, *d_ffy, *d_ffz;
 dfloat *d_ux, *d_uy, *d_uz, *d_pxx, *d_pyy, *d_pzz;
 dfloat *d_pxy, *d_pxz, *d_pyz, *d_rho, *d_phi;
 dfloat *d_fneq;
-dfloat *d_grad_fix, *d_grad_fiy, *d_grad_fiz, *d_uu;
+//dfloat *d_grad_fix, *d_grad_fiy, *d_grad_fiz, *d_uu;
 
 dfloat *h_pxx = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_pyy = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
@@ -68,7 +68,7 @@ void initializeVars() {
     size_t single_size = sizeof(dfloat);
 
     auto IDX3D = [&](int i, int j, int k) {
-        return ((i) + nx * ((j) + ny * (k)));
+        return ((k) * (nx * ny) + (j) * (nx) + (i));
     };
 
     for (int k = 0; k < nz; ++k) {
@@ -114,10 +114,10 @@ void initializeVars() {
     cudaMalloc((void **)&d_ciz, vs_size);
     cudaMalloc((void **)&d_fneq, vs_size);
 
-    cudaMalloc((void **)&d_grad_fix, single_size);
-    cudaMalloc((void **)&d_grad_fiy, single_size);
-    cudaMalloc((void **)&d_grad_fiz, single_size);
-    cudaMalloc((void **)&d_uu, single_size);
+    //cudaMalloc((void **)&d_grad_fix, single_size);
+    //cudaMalloc((void **)&d_grad_fiy, single_size);
+    //cudaMalloc((void **)&d_grad_fiz, single_size);
+    //cudaMalloc((void **)&d_uu, single_size);
 
     cudaMemset(d_ux, 0.0, size);
     cudaMemset(d_uy, 0.0, size);

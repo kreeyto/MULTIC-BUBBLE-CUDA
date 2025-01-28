@@ -4,17 +4,18 @@ clc; clearvars; close all
 
 % ALTERAR VARIAVEIS BASEADO NA SIMULAÇÃO EXECUTADA!!!!!!!
 % Futuramente pretendo automatizar a definição dos parâmetros/diretórios baseado na simulação.
-
-sim_dir = 'COLOQUE/O/DIRETORIO/AQUI'; % Substitua pelo diretório onde estão os arquivos .txt
+base_dir = fileparts(mfilename('fullpath'));
+sim_subdir = 'matlabFiles/FD3Q19_PD3Q15/000/';
+sim_dir = fullfile(base_dir, sim_subdir); 
 file_prefix = '000_phi'; % Prefixo dos arquivos. Por padrão é <id>_phi
-num_steps = 50; % Número de passos de simulação
+num_steps = 100; % Número de passos de simulação
 res = 1; % Valor da resolução (definido em Bubble-GPU/src/var.cu)
 nx = round(150 * res); % Substitua pelo valor correto de nx
 ny = round(150 * res); % Substitua pelo valor correto de ny
 nz = round(150 * res); % Substitua pelo valor correto de nz
 % ================================================================== %
 
-for t = 1:num_steps
+for t = 0:10:num_steps-10
     filename = sprintf('%s%s%d.txt', sim_dir, file_prefix, t);
     if ~isfile(filename)
         fprintf('Arquivo não encontrado: %s\n', filename);
@@ -38,5 +39,5 @@ for t = 1:num_steps
     title(sprintf('Simulação passo %d', t));
     
     % Delay opcional para visualização
-    % pause(0.1);
+    pause(0.1);
 end
