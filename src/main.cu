@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
     }
 
     // ========================= //
-    int stamp = 10, nsteps = 100;
+    int stamp = 50, nsteps = 500;
     // ========================= //
     initializeVars();
 
