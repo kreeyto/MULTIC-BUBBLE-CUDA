@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
     }
 
     // ========================= //
-    int stamp = 50, nsteps = 500;
+    int stamp = 100, nsteps = 2000;
     // ========================= //
     initializeVars();
 
@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
             d_pxx, d_pyy, d_pzz,
             d_pxy, d_pxz, d_pyz,
             cssq, nx, ny, nz,
-            fpoints, d_fneq
+            fpoints
         );
         cudaDeviceSynchronize();
         
@@ -165,22 +165,32 @@ int main(int argc, char* argv[]) {
             d_rho, d_phi, d_f, d_g, 
             d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, 
             cssq, omega, sharp_c, fpoints, gpoints,
-            nx, ny, nz
+            nx, ny, nz, d_f_coll // alocar
         );
         cudaDeviceSynchronize();
+
+        streamingCalcNew<<<numBlocks, threadsPerBlock>>> (
+            d_f_coll, d_cix, d_ciy, d_ciz,
+            nx, ny, nz, fpoints, d_f // f final após streaming
+        ); 
+        cudaDeviceSynchronize();    
         
         streamingCalc<<<numBlocks, threadsPerBlock>>> (
-            d_g, d_cix, d_ciy, d_ciz, nx, ny, nz, gpoints
+            d_g, d_g_out, 
+            d_cix, d_ciy, d_ciz,
+            nx, ny, nz, gpoints
         );
         cudaDeviceSynchronize();
         
         fgBoundary<<<numBlocks, threadsPerBlock>>>(
-            d_f, d_g, d_rho, d_phi, d_w, d_w_g,
+            d_f, d_g_out, d_rho, d_phi, d_w, d_w_g,
             d_cix, d_ciy, d_ciz,
             fpoints, gpoints, nx, ny, nz
         );
         cudaDeviceSynchronize();
-        
+        // copy g_out to g
+        cudaMemcpy(d_g, d_g_out, nx * ny * nz * gpoints * sizeof(dfloat), cudaMemcpyDeviceToDevice);
+
         boundaryConditions<<<numBlocks, threadsPerBlock>>>(
             d_phi, nx, ny, nz
         );
@@ -203,7 +213,7 @@ int main(int argc, char* argv[]) {
                     for (int z = 0; z < nz; ++z) {
                         for (int y = 0; y < ny; ++y) {
                             for (int x = 0; x < nx; ++x) {
-                                int index = x + nx * (y + ny * z);
+                                int index = ((z) * (nx * ny) + (y) * (nx) + (x));
                                 file_phi_txt << phi_host[index] << " ";
                             }
                             file_phi_txt << "\n";
@@ -222,10 +232,10 @@ int main(int argc, char* argv[]) {
     dfloat *pointers[] = {d_f, d_g, d_phi, d_rho, d_w, d_w_g, d_cix, d_ciy, d_ciz, 
                           d_mod_grad, d_normx, d_normy, d_normz, d_indicator,
                           d_curvature, d_ffx, d_ffy, d_ffz, d_ux, d_uy, d_uz,
-                          d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, d_fneq//,
-                          //d_grad_fix, d_grad_fiy, d_grad_fiz, d_uu
+                          d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, d_f_coll, d_g_out
+                          // d_fneq, d_grad_fix, d_grad_fiy, d_grad_fiz, d_uu
                         };
-    freeMemory(pointers, 28);  
+    freeMemory(pointers, 30);  
 
     return 0;
 }

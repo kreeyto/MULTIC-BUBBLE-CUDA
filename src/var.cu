@@ -5,7 +5,7 @@
 
 #include "precision.cuh"
 
-dfloat res = 1.0;
+dfloat res = 0.9;
 int mesh = static_cast<int>(round(150 * res));
 
 int nx = mesh;
@@ -28,7 +28,8 @@ int nz = mesh;
     int gpoints = 27;
 #endif
 
-dfloat tau = 1.0;
+// AJUSTAR
+dfloat tau = 0.6;
 dfloat cssq = 1.0 / 3.0;
 dfloat omega = 1.0 / tau;
 dfloat sharp_c = 0.15 * 3.0;
@@ -39,8 +40,9 @@ dfloat *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;
 dfloat *d_curvature, *d_ffx, *d_ffy, *d_ffz;
 dfloat *d_ux, *d_uy, *d_uz, *d_pxx, *d_pyy, *d_pzz;
 dfloat *d_pxy, *d_pxz, *d_pyz, *d_rho, *d_phi;
-dfloat *d_fneq;
+//dfloat *d_fneq;
 //dfloat *d_grad_fix, *d_grad_fiy, *d_grad_fiz, *d_uu;
+dfloat *d_f_coll, *d_g_out;
 
 dfloat *h_pxx = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_pyy = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
@@ -112,12 +114,14 @@ void initializeVars() {
     cudaMalloc((void **)&d_cix, vs_size);
     cudaMalloc((void **)&d_ciy, vs_size);
     cudaMalloc((void **)&d_ciz, vs_size);
-    cudaMalloc((void **)&d_fneq, vs_size);
+    //cudaMalloc((void **)&d_fneq, vs_size);
 
     //cudaMalloc((void **)&d_grad_fix, single_size);
     //cudaMalloc((void **)&d_grad_fiy, single_size);
     //cudaMalloc((void **)&d_grad_fiz, single_size);
     //cudaMalloc((void **)&d_uu, single_size);
+    cudaMalloc((void **)&d_f_coll, f_size);
+    cudaMalloc((void **)&d_g_out, g_size);
 
     cudaMemset(d_ux, 0.0, size);
     cudaMemset(d_uy, 0.0, size);
@@ -131,7 +135,7 @@ void initializeVars() {
     cudaMemset(d_ffy, 0.0, size);
     cudaMemset(d_ffz, 0.0, size);
     cudaMemset(d_mod_grad, 0.0, size);
-    cudaMemset(d_fneq, 0.0, vs_size);
+    //cudaMemset(d_fneq, 0.0, vs_size);
 
     cudaMemcpy(d_pxx, h_pxx, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_pyy, h_pyy, size, cudaMemcpyHostToDevice);

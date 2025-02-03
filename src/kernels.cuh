@@ -33,7 +33,7 @@ __global__ void momentiCalc(
     dfloat *pxx, dfloat *pyy, dfloat *pzz,
     dfloat *pxy, dfloat *pxz, dfloat *pyz,
     dfloat cssq, int nx, int ny, int nz,
-    int fpoints, dfloat *fneq
+    int fpoints
 );
 
 __global__ void collisionCalc(
@@ -44,11 +44,19 @@ __global__ void collisionCalc(
     dfloat *rho, dfloat *phi, dfloat *f, dfloat *g,
     dfloat *pxx, dfloat *pyy, dfloat *pzz, dfloat *pxy, dfloat *pxz, dfloat *pyz,
     dfloat cssq, dfloat omega, dfloat sharp_c, int fpoints, int gpoints,
-    int nx, int ny, int nz
+    int nx, int ny, int nz, dfloat *f_coll
+);
+
+__global__ void streamingCalcNew(
+    const dfloat *f_coll,
+    const dfloat *cix, const dfloat *ciy, const dfloat *ciz,
+    int nx, int ny, int nz, int fpoints,
+    dfloat *f
 );
 
 __global__ void streamingCalc(
-    dfloat *g, const dfloat *cix, const dfloat *ciy, const dfloat *ciz,
+    const dfloat *g_in, dfloat *g_out, 
+    const dfloat *cix, const dfloat *ciy, const dfloat *ciz,
     int nx, int ny, int nz, int gpoints
 );
 

@@ -64,14 +64,14 @@ __global__ void gradCalc(
         dfloat grad_fix = 0.0, grad_fiy = 0.0, grad_fiz = 0.0;
         for (int l = 0; l < fpoints; ++l) {
             grad_fix = grad_fix  + 3.0 * w[l] * cix[l] * phi[IDX3D(i + static_cast<int>(cix[l]),
-                                                        j + static_cast<int>(ciy[l]),
-                                                        k + static_cast<int>(ciz[l]))];
+                                                                   j + static_cast<int>(ciy[l]),
+                                                                   k + static_cast<int>(ciz[l]))];
             grad_fiy = grad_fiy  + 3.0 * w[l] * ciy[l] * phi[IDX3D(i + static_cast<int>(cix[l]),
-                                                        j + static_cast<int>(ciy[l]),
-                                                        k + static_cast<int>(ciz[l]))];
+                                                                   j + static_cast<int>(ciy[l]),
+                                                                   k + static_cast<int>(ciz[l]))];
             grad_fiz = grad_fiz + 3.0 * w[l] * ciz[l] * phi[IDX3D(i + static_cast<int>(cix[l]),
-                                                        j + static_cast<int>(ciy[l]),
-                                                        k + static_cast<int>(ciz[l]))];
+                                                                  j + static_cast<int>(ciy[l]),
+                                                                  k + static_cast<int>(ciz[l]))];
         }
         mod_grad[IDX3D(i,j,k)] = sqrt(grad_fix*grad_fix + grad_fiy*grad_fiy + grad_fiz*grad_fiz);
         normx[IDX3D(i,j,k)] = grad_fix / (mod_grad[IDX3D(i,j,k)] + 1e-9);
@@ -125,7 +125,7 @@ __global__ void momentiCalc(
     dfloat *pxx, dfloat *pyy, dfloat *pzz,
     dfloat *pxy, dfloat *pxz, dfloat *pyz,
     dfloat cssq, int nx, int ny, int nz,
-    int fpoints, dfloat *fneq
+    int fpoints
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -135,6 +135,8 @@ __global__ void momentiCalc(
 
     #define IDX3D(i,j,k) ((k) * (nx * ny) + (j) * (nx) + (i))
     #define IDX4D(i,j,k,l) ((l) * (nx * ny * nz) + (k) * (nx * ny) + (j) * (nx) + (i))
+
+    dfloat fneq[19];
     
     if (i > 0 && i < nx-1 && j > 0 && j < ny-1 && k > 0 && k < nz-1) {
         #ifdef FD3Q19 
@@ -229,7 +231,7 @@ __global__ void collisionCalc(
     dfloat *rho, dfloat *phi, dfloat *f, dfloat *g,
     dfloat *pxx, dfloat *pyy, dfloat *pzz, dfloat *pxy, dfloat *pxz, dfloat *pyz,
     dfloat cssq, dfloat omega, dfloat sharp_c, int fpoints, int gpoints,
-    int nx, int ny, int nz
+    int nx, int ny, int nz, dfloat *f_coll // saída: f pós-colisão
 ) {     
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -256,17 +258,7 @@ __global__ void collisionCalc(
                         2 * cix[l] * ciy[l] * pxy[IDX3D(i,j,k)] +
                         2 * cix[l] * ciz[l] * pxz[IDX3D(i,j,k)] +
                         2 * ciy[l] * ciz[l] * pyz[IDX3D(i,j,k)];
-            int inb = i + static_cast<int>(cix[l]);
-            int jnb = j + static_cast<int>(ciy[l]);
-            int knb = k + static_cast<int>(ciz[l]);
-
-            if (inb >= 0 && inb < nx &&
-                jnb >= 0 && jnb < ny &&
-                knb >= 0 && knb < nz)
-            {
-                f[IDX4D(inb, jnb, knb, l)] =
-                    feq + (1.0 - omega) * (w[l] / (2.0*cssq*cssq)) * fneq + HeF;
-            }
+            f_coll[IDX4D(i,j,k,l)] = feq + (1.0 - omega) * (w[l] / (2.0*cssq*cssq)) * fneq + HeF;
         }
         for (int l = 0; l < gpoints; ++l) {
             dfloat udotc = (ux[IDX3D(i,j,k)] * cix[l] + uy[IDX3D(i,j,k)] * ciy[l] + uz[IDX3D(i,j,k)] * ciz[l]) / cssq;
@@ -280,25 +272,48 @@ __global__ void collisionCalc(
     }
 }
 
-__global__ void streamingCalc(
-    dfloat *g, const dfloat *cix, const dfloat *ciy, const dfloat *ciz,
-    int nx, int ny, int nz, int gpoints
+__global__ void streamingCalcNew(
+    const dfloat *f_coll,
+    const dfloat *cix, const dfloat *ciy, const dfloat *ciz,
+    int nx, int ny, int nz, int fpoints,
+    dfloat *f // saída: f final após streaming
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
     int k = blockIdx.z * blockDim.z + threadIdx.z;
 
     if (i >= nx || j >= ny || k >= nz) return;
+    
+    #define IDX3D(i,j,k) ((k)*(nx*ny)+(j)*nx+(i))
+    #define IDX4D(i,j,k,l) ((l)*(nx*ny*nz)+(k)*(nx*ny)+(j)*nx+(i))
+    
+    // Cada thread puxa os dados da célula vizinha oposta à direção l
+    for (int l = 0; l < fpoints; ++l) {
+        int src_i = (i - (int)cix[l] + nx) % nx;
+        int src_j = (j - (int)ciy[l] + ny) % ny;
+        int src_k = (k - (int)ciz[l] + nz) % nz;
+        f[IDX4D(i,j,k,l)] = f_coll[IDX4D(src_i, src_j, src_k, l)];
+    }
+}
+
+__global__ void streamingCalc(
+    const dfloat *g_in, dfloat *g_out, 
+    const dfloat *cix, const dfloat *ciy, const dfloat *ciz,
+    int nx, int ny, int nz, int gpoints
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    int k = blockIdx.z * blockDim.z + threadIdx.z;
+    
+    if (i >= nx || j >= ny || k >= nz) return;
 
     #define IDX4D(i,j,k,l) ((l) * (nx * ny * nz) + (k) * (nx * ny) + (j) * (nx) + (i))
-
-    if (i < nx && j < ny && k < nz) {
-        for (int l = 0; l < gpoints; ++l) {
-            int shifted_i = (i - static_cast<int>(cix[l]) + nx) % nx;
-            int shifted_j = (j - static_cast<int>(ciy[l]) + ny) % ny;
-            int shifted_k = (k - static_cast<int>(ciz[l]) + nz) % nz;
-            g[IDX4D(i,j,k,l)] = g[IDX4D(shifted_i, shifted_j, shifted_k, l)];
-        }
+    
+    for (int l = 0; l < gpoints; ++l) {
+        int shifted_i = (i - static_cast<int>(cix[l]) + nx) % nx;
+        int shifted_j = (j - static_cast<int>(ciy[l]) + ny) % ny;
+        int shifted_k = (k - static_cast<int>(ciz[l]) + nz) % nz;
+        g_out[IDX4D(i,j,k,l)] = g_in[IDX4D(shifted_i,shifted_j,shifted_k,l)];
     }
 }
 
