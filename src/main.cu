@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
         gradCalc<<<numBlocks, threadsPerBlock>>> (
             d_phi, d_mod_grad, d_normx, d_normy, d_normz, 
             d_indicator, d_w, d_cix, d_ciy, d_ciz, 
-            fpoints, nx, ny, nz
+            nx, ny, nz
         );
         cudaDeviceSynchronize();
         
@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
             d_cix, d_ciy, d_ciz,
             d_normx, d_normy, d_normz, 
             d_ffx, d_ffy, d_ffz, sigma,
-            fpoints, nx, ny, nz
+            nx, ny, nz
         );
         cudaDeviceSynchronize();
         
@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
             d_cix, d_ciy, d_ciz, 
             d_pxx, d_pyy, d_pzz,
             d_pxy, d_pxz, d_pyz,
-            cssq, nx, ny, nz, fpoints
+            cssq, nx, ny, nz
         );
         cudaDeviceSynchronize();
         
@@ -163,28 +163,28 @@ int main(int argc, char* argv[]) {
             d_ffx, d_ffy, d_ffz,
             d_rho, d_phi, d_f, d_g, 
             d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, 
-            cssq, omega, sharp_c, fpoints, gpoints,
+            cssq, omega, sharp_c,
             nx, ny, nz, d_f_coll 
         );
         cudaDeviceSynchronize();
 
         streamingCalcNew<<<numBlocks, threadsPerBlock>>> (
             d_f_coll, d_cix, d_ciy, d_ciz,
-            nx, ny, nz, fpoints, d_f 
+            nx, ny, nz, d_f 
         ); 
         cudaDeviceSynchronize();
         
         streamingCalc<<<numBlocks, threadsPerBlock>>> (
             d_g, d_g_out, 
             d_cix, d_ciy, d_ciz,
-            nx, ny, nz, gpoints
+            nx, ny, nz
         );
         cudaDeviceSynchronize();
         
         fgBoundary<<<numBlocks, threadsPerBlock>>> (
             d_f, d_g_out, d_rho, d_phi, d_w, d_w_g,
             d_cix, d_ciy, d_ciz,
-            fpoints, gpoints, nx, ny, nz
+            nx, ny, nz
         );
         cudaDeviceSynchronize();
         cudaMemcpy(d_g, d_g_out, nx * ny * nz * gpoints * sizeof(dfloat), cudaMemcpyDeviceToDevice);

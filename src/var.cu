@@ -29,11 +29,11 @@ int nz = mesh;
 #endif
 
 // AJUSTAR
-dfloat tau = 0.6;
+dfloat tau = 1.0;
 dfloat cssq = 1.0 / 3.0;
 dfloat omega = 1.0 / tau;
 dfloat sharp_c = 0.15 * 3.0;
-dfloat sigma = 0.1;
+dfloat sigma = 0.024;
 
 dfloat *d_f, *d_g, *d_w, *d_w_g, *d_cix, *d_ciy, *d_ciz;
 dfloat *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;
