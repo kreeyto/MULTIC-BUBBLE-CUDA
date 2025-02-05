@@ -2,3 +2,5 @@ bin/FD3Q19_PD3Q15/000/*
 !bin/FD3Q19_PD3Q15/000/.gitkeep
 matlabFiles/FD3Q19_PD3Q15/000/*
 !matlabFiles/FD3Q19_PD3Q15/000/.gitkeep
+bin/FD3Q27_PD3Q19/000/*
+!bin/FD3Q27_PD3Q19/000/.gitkeep

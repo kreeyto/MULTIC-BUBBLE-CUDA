@@ -3,7 +3,7 @@
 #define PRECISION_H
 
 using namespace std;
-#define DOUBLE_PRECISION
+#define SINGLE_PRECISION
 
 #ifdef SINGLE_PRECISION
     typedef float dfloat;      // single precision

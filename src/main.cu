@@ -7,10 +7,12 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <chrono>
 
 #include "precision.cuh"
 
 int main(int argc, char* argv[]) {
+    auto start_time = std::chrono::high_resolution_clock::now();
     if (argc < 5) {
         cerr << "Erro: Uso: " << argv[0] << " F<fluid velocity set> P<phase field velocity set> <id> <save_binary>" << endl;
         return 1;
@@ -20,7 +22,6 @@ int main(int argc, char* argv[]) {
     string id = argv[3];
     bool save_binary = stoi(argv[4]);
     bool debug_mode = (argc > 5) ? stoi(argv[5]) : 0; 
-
     string base_dir;   
     #ifdef _WIN32
         base_dir = "..\\";
@@ -30,7 +31,6 @@ int main(int argc, char* argv[]) {
     string model_dir = base_dir + "bin/" + fluid_model + "_" + phase_model + "/";
     string sim_dir = model_dir + id + "/";
     string matlab_dir = base_dir + "matlabFiles/" + fluid_model + "_" + phase_model + "/" + id + "/";
-
     if (!debug_mode) { 
         if (save_binary) {
             #ifdef _WIN32
@@ -50,9 +50,10 @@ int main(int argc, char* argv[]) {
             (void)ret;
         }
     }
+    // ============================================================================================================================================================= //
 
     // ========================= //
-    int stamp = 100, nsteps = 2000;
+    int stamp = 100, nsteps = 1000;
     // ========================= //
     initializeVars();
 
@@ -122,7 +123,6 @@ int main(int argc, char* argv[]) {
     vector<dfloat> phi_host(nx * ny * nz);
 
     for (int t = 0; t < nsteps; ++t) {
-
         cout << "Passo " << t << " de " << nsteps << " iniciado..." << endl;
 
         phiCalc<<<numBlocks, threadsPerBlock>>> (
@@ -152,8 +152,7 @@ int main(int argc, char* argv[]) {
             d_cix, d_ciy, d_ciz, 
             d_pxx, d_pyy, d_pzz,
             d_pxy, d_pxz, d_pyz,
-            cssq, nx, ny, nz,
-            fpoints
+            cssq, nx, ny, nz, fpoints
         );
         cudaDeviceSynchronize();
         
@@ -165,15 +164,15 @@ int main(int argc, char* argv[]) {
             d_rho, d_phi, d_f, d_g, 
             d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, 
             cssq, omega, sharp_c, fpoints, gpoints,
-            nx, ny, nz, d_f_coll // alocar
+            nx, ny, nz, d_f_coll 
         );
         cudaDeviceSynchronize();
 
         streamingCalcNew<<<numBlocks, threadsPerBlock>>> (
             d_f_coll, d_cix, d_ciy, d_ciz,
-            nx, ny, nz, fpoints, d_f // f final após streaming
+            nx, ny, nz, fpoints, d_f 
         ); 
-        cudaDeviceSynchronize();    
+        cudaDeviceSynchronize();
         
         streamingCalc<<<numBlocks, threadsPerBlock>>> (
             d_g, d_g_out, 
@@ -182,13 +181,12 @@ int main(int argc, char* argv[]) {
         );
         cudaDeviceSynchronize();
         
-        fgBoundary<<<numBlocks, threadsPerBlock>>>(
+        fgBoundary<<<numBlocks, threadsPerBlock>>> (
             d_f, d_g_out, d_rho, d_phi, d_w, d_w_g,
             d_cix, d_ciy, d_ciz,
             fpoints, gpoints, nx, ny, nz
         );
         cudaDeviceSynchronize();
-        // copy g_out to g
         cudaMemcpy(d_g, d_g_out, nx * ny * nz * gpoints * sizeof(dfloat), cudaMemcpyDeviceToDevice);
 
         boundaryConditions<<<numBlocks, threadsPerBlock>>>(
@@ -198,7 +196,6 @@ int main(int argc, char* argv[]) {
 
         if (!debug_mode && t % stamp == 0) {
             checkCudaErrors(cudaMemcpy(phi_host.data(), d_phi, nx * ny * nz * sizeof(dfloat), cudaMemcpyDeviceToHost));
-            
             if (save_binary) {
                 ostringstream filename_phi_bin;
                 filename_phi_bin << sim_dir << id << "_phi" << setw(6) << setfill('0') << t << ".bin";
@@ -223,19 +220,20 @@ int main(int argc, char* argv[]) {
                     file_phi_txt.close();
                 }
             }
-
             cout << "Passo " << t << ": Dados salvos em " << (save_binary ? sim_dir : matlab_dir) << endl;
         }
-        
     }
 
     dfloat *pointers[] = {d_f, d_g, d_phi, d_rho, d_w, d_w_g, d_cix, d_ciy, d_ciz, 
                           d_mod_grad, d_normx, d_normy, d_normz, d_indicator,
                           d_curvature, d_ffx, d_ffy, d_ffz, d_ux, d_uy, d_uz,
                           d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, d_f_coll, d_g_out
-                          // d_fneq, d_grad_fix, d_grad_fiy, d_grad_fiz, d_uu
                         };
-    freeMemory(pointers, 30);  
+    freeMemory(pointers, 29);  
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed_time = end_time - start_time;
+    std::cout << "Tempo total de execução: " << elapsed_time.count() << " segundos" << std::endl;
 
     return 0;
 }
