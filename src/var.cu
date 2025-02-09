@@ -15,17 +15,11 @@ int nz = mesh;
 // fluid velocity set
 #ifdef FD3Q19
     int fpoints = 19;
-#elif defined(FD3Q27)
-    int fpoints = 27;
 #endif
 
 // phase velocity set
 #ifdef PD3Q15
     int gpoints = 15;
-#elif defined(PD3Q19)
-    int gpoints = 19;
-#elif defined(PD3Q27)
-    int gpoints = 27;
 #endif
 
 // AJUSTAR
@@ -33,9 +27,10 @@ dfloat tau = 1.0;
 dfloat cssq = 1.0 / 3.0;
 dfloat omega = 1.0 / tau;
 dfloat sharp_c = 0.15 * 3.0;
-dfloat sigma = 0.024;
+dfloat sigma = 0.1;
 
-dfloat *d_f, *d_g, *d_w, *d_w_g, *d_cix, *d_ciy, *d_ciz;
+dfloat *d_f, *d_g, *d_w, *d_w_g;
+int *d_cix, *d_ciy, *d_ciz;
 dfloat *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;
 dfloat *d_curvature, *d_ffx, *d_ffy, *d_ffz;
 dfloat *d_ux, *d_uy, *d_uz, *d_pxx, *d_pyy, *d_pzz;
@@ -50,13 +45,9 @@ dfloat *h_pxz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_pyz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 
 #ifdef FD3Q19
-    const dfloat cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
-    const dfloat ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
-    const dfloat ciz[19] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1 };
-#elif defined(FD3Q27)
-    const dfloat cix[27] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 1, -1, 1, -1 };
-    const dfloat ciy[27] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1, 1, -1, -1, 1, 1, -1, -1, 1 };
-    const dfloat ciz[27] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1, 1, -1, -1, 1, 1, 1, -1, -1 };
+    const int cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
+    const int ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
+    const int ciz[19] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1 };
 #endif
 
 void initializeVars() {
@@ -68,7 +59,7 @@ void initializeVars() {
     size_t single_size = sizeof(dfloat);
 
     auto IDX3D = [&](int i, int j, int k) {
-        return ((k) * (nx * ny) + (j) * (nx) + (i));
+        return ((i) + (j) * nx + (k) * nx * ny);
     };
 
     for (int k = 0; k < nz; ++k) {

@@ -1,0 +1,17 @@
+---------------------------- SIMULATION INFORMATION ----------------------------
+                           Simulation ID: 1
+                           Velocity set: FD3Q19
+                           Precision: float
+                           NX: 150
+                           NY: 150
+                           NZ: 150
+                           NZ_TOTAL: 150
+                           Tau: 1
+                           Umax: 0.000000e+00
+                           FX: 0.000000e+00
+                           FY: 0.000000e+00
+                           FZ: 0.000000e+00
+                           Save steps: 1
+                           Nsteps: 1
+                           MLUPS: 1.187970e+01
+--------------------------------------------------------------------------------

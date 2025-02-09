@@ -20,9 +20,9 @@ __global__ void gradCalc(
     dfloat * __restrict__ normz,
     dfloat * __restrict__ indicator,
     const dfloat * __restrict__ w,
-    const dfloat * __restrict__ cix,
-    const dfloat * __restrict__ ciy,
-    const dfloat * __restrict__ ciz,
+    const int * __restrict__ cix,
+    const int * __restrict__ ciy,
+    const int * __restrict__ ciz,
     int nx, int ny, int nz
 );
 
@@ -30,9 +30,9 @@ __global__ void curvatureCalc(
     dfloat * __restrict__ curvature,
     const dfloat * __restrict__ indicator,
     const dfloat * __restrict__ w,
-    const dfloat * __restrict__ cix,
-    const dfloat * __restrict__ ciy,
-    const dfloat * __restrict__ ciz,
+    const int * __restrict__ cix,
+    const int * __restrict__ ciy,
+    const int * __restrict__ ciz,
     const dfloat * __restrict__ normx,
     const dfloat * __restrict__ normy,
     const dfloat * __restrict__ normz,
@@ -53,9 +53,9 @@ __global__ void momentiCalc(
     dfloat * __restrict__ ffz,
     const dfloat * __restrict__ w,
     const dfloat * __restrict__ f,
-    const dfloat * __restrict__ cix,
-    const dfloat * __restrict__ ciy,
-    const dfloat * __restrict__ ciz,
+    const int * __restrict__ cix,
+    const int * __restrict__ ciy,
+    const int * __restrict__ ciz,
     dfloat * __restrict__ pxx,
     dfloat * __restrict__ pyy,
     dfloat * __restrict__ pzz,
@@ -72,9 +72,9 @@ __global__ void collisionCalc(
     const dfloat * __restrict__ uz,
     const dfloat * __restrict__ w,
     const dfloat * __restrict__ w_g,
-    const dfloat * __restrict__ cix,
-    const dfloat * __restrict__ ciy,
-    const dfloat * __restrict__ ciz,
+    const int * __restrict__ cix,
+    const int * __restrict__ ciy,
+    const int * __restrict__ ciz,
     const dfloat * __restrict__ normx,
     const dfloat * __restrict__ normy,
     const dfloat * __restrict__ normz,
@@ -95,22 +95,12 @@ __global__ void collisionCalc(
     int nx, int ny, int nz,
     dfloat * __restrict__ f_coll
 );
-/*__global__ void collisionCalc(
-    dfloat *ux, dfloat *uy, dfloat *uz, dfloat *w, dfloat *w_g,
-    const dfloat *cix, const dfloat *ciy, const dfloat *ciz,
-    dfloat *normx, dfloat *normy, dfloat *normz,
-    dfloat *ffx, dfloat *ffy, dfloat *ffz,
-    dfloat *rho, dfloat *phi, dfloat *f, dfloat *g,
-    dfloat *pxx, dfloat *pyy, dfloat *pzz, dfloat *pxy, dfloat *pxz, dfloat *pyz,
-    dfloat cssq, dfloat omega, dfloat sharp_c, int fpoints, int gpoints,
-    int nx, int ny, int nz, dfloat *f_coll // escrita final na memória global
-);*/
 
 __global__ void streamingCalcNew(
     const dfloat * __restrict__ f_coll,
-    const dfloat * __restrict__ cix,
-    const dfloat * __restrict__ ciy,
-    const dfloat * __restrict__ ciz,
+    const int * __restrict__ cix,
+    const int * __restrict__ ciy,
+    const int * __restrict__ ciz,
     int nx, int ny, int nz,
     dfloat * __restrict__ f 
 );
@@ -118,9 +108,9 @@ __global__ void streamingCalcNew(
 __global__ void streamingCalc(
     const dfloat * __restrict__ g_in,
     dfloat * __restrict__ g_out,
-    const dfloat * __restrict__ cix,
-    const dfloat * __restrict__ ciy,
-    const dfloat * __restrict__ ciz,
+    const int * __restrict__ cix,
+    const int * __restrict__ ciy,
+    const int * __restrict__ ciz,
     int nx, int ny, int nz
 );
 
@@ -131,9 +121,9 @@ __global__ void fgBoundary(
     const dfloat * __restrict__ phi,
     const dfloat * __restrict__ w,
     const dfloat * __restrict__ w_g,
-    const dfloat * __restrict__ cix,
-    const dfloat * __restrict__ ciy,
-    const dfloat * __restrict__ ciz,
+    const int * __restrict__ cix,
+    const int * __restrict__ ciy,
+    const int * __restrict__ ciz,
     int nx, int ny, int nz
 );
 
