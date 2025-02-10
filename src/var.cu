@@ -6,31 +6,13 @@
 #include "precision.cuh"
 
 dfloat res = 1.0;
-int mesh = static_cast<int>(round(150 * res));
+int nx = 128; int ny = 128; int nz = 128;  
 
-int nx = mesh;
-int ny = mesh;
-int nz = mesh;  
+__constant__ dfloat TAU, CSSQ, OMEGA, SHARP_C, SIGMA;
+__constant__ dfloat W[FPOINTS], W_G[GPOINTS];
+__constant__ int CIX[FPOINTS], CIY[FPOINTS], CIZ[FPOINTS];
 
-// fluid velocity set
-#ifdef FD3Q19
-    int fpoints = 19;
-#endif
-
-// phase velocity set
-#ifdef PD3Q15
-    int gpoints = 15;
-#endif
-
-// AJUSTAR
-dfloat tau = 1.0;
-dfloat cssq = 1.0 / 3.0;
-dfloat omega = 1.0 / tau;
-dfloat sharp_c = 0.15 * 3.0;
-dfloat sigma = 0.1;
-
-dfloat *d_f, *d_g, *d_w, *d_w_g;
-int *d_cix, *d_ciy, *d_ciz;
+dfloat *d_f, *d_g;
 dfloat *d_normx, *d_normy, *d_normz, *d_indicator, *d_mod_grad;
 dfloat *d_curvature, *d_ffx, *d_ffy, *d_ffz;
 dfloat *d_ux, *d_uy, *d_uz, *d_pxx, *d_pyy, *d_pzz;
@@ -43,19 +25,43 @@ dfloat *h_pzz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_pxy = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_pxz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_pyz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
+dfloat *h_rho = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
+
+// ========================================================================== parametros ========================================================================== //
+dfloat h_tau = 0.7;
+dfloat h_cssq = 1.0 / 3.0;
+dfloat h_omega = 1.0 / h_tau;
+dfloat h_sharp_c = 0.15 * 3.0;
+dfloat h_sigma = 0.1;
 
 #ifdef FD3Q19
-    const int cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
-    const int ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
-    const int ciz[19] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1 };
+    int h_cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
+    int h_ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
+    int h_ciz[19] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1 };
 #endif
+
+#ifdef FD3Q19
+    dfloat h_w[19] = {
+        1.0 / 3.0, 
+        1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0,
+        1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0
+    };
+#endif
+#ifdef PD3Q15
+    dfloat h_w_g[15] = {
+        2.0 / 9.0, 
+        1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0,
+        1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0
+    };
+#endif
+// =============================================================================================================================================================== //
 
 void initializeVars() {
     size_t size = nx * ny * nz * sizeof(dfloat);            
-    size_t f_size = nx * ny * nz * fpoints * sizeof(dfloat); 
-    size_t g_size = nx * ny * nz * gpoints * sizeof(dfloat); 
-    size_t vs_size = fpoints * sizeof(dfloat);
-    size_t pf_size = gpoints * sizeof(dfloat);
+    size_t f_size = nx * ny * nz * FPOINTS * sizeof(dfloat); 
+    size_t g_size = nx * ny * nz * GPOINTS * sizeof(dfloat); 
+    size_t vs_size = FPOINTS * sizeof(dfloat);
+    size_t pf_size = GPOINTS * sizeof(dfloat);
     size_t single_size = sizeof(dfloat);
 
     auto IDX3D = [&](int i, int j, int k) {
@@ -71,6 +77,7 @@ void initializeVars() {
                 h_pxy[IDX3D(i,j,k)] = 1.0;
                 h_pxz[IDX3D(i,j,k)] = 1.0;
                 h_pyz[IDX3D(i,j,k)] = 1.0;
+                h_rho[IDX3D(i,j,k)] = 1.0;
             }
         }
     }
@@ -98,18 +105,18 @@ void initializeVars() {
 
     cudaMalloc((void **)&d_f, f_size);
     cudaMalloc((void **)&d_g, g_size);
-    cudaMalloc((void **)&d_w, vs_size);
-    cudaMalloc((void **)&d_w_g, pf_size);
-    cudaMalloc((void **)&d_cix, vs_size);
-    cudaMalloc((void **)&d_ciy, vs_size);
-    cudaMalloc((void **)&d_ciz, vs_size);
 
     cudaMalloc((void **)&d_f_coll, f_size);
     cudaMalloc((void **)&d_g_out, g_size);
 
+    cudaMemset(d_phi, 0.0, size);
     cudaMemset(d_ux, 0.0, size);
     cudaMemset(d_uy, 0.0, size);
     cudaMemset(d_uz, 0.0, size);
+    
+    cudaMemset(d_f, 0.0, f_size);
+    cudaMemset(d_g, 0.0, g_size);
+
     cudaMemset(d_normx, 0.0, size);
     cudaMemset(d_normy, 0.0, size);
     cudaMemset(d_normz, 0.0, size);
@@ -126,9 +133,20 @@ void initializeVars() {
     cudaMemcpy(d_pxy, h_pxy, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_pxz, h_pxz, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_pyz, h_pyz, size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_cix, cix, vs_size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_ciy, ciy, vs_size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_ciz, ciz, vs_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_rho, h_rho, size, cudaMemcpyHostToDevice);
+
+    cudaMemcpyToSymbol(TAU, &h_tau, sizeof(dfloat));
+    cudaMemcpyToSymbol(CSSQ, &h_cssq, sizeof(dfloat));
+    cudaMemcpyToSymbol(OMEGA, &h_omega, sizeof(dfloat));
+    cudaMemcpyToSymbol(SHARP_C, &h_sharp_c, sizeof(dfloat));
+    cudaMemcpyToSymbol(SIGMA, &h_sigma, sizeof(dfloat));
+
+    cudaMemcpyToSymbol(W, &h_w, FPOINTS * sizeof(dfloat));
+    cudaMemcpyToSymbol(W_G, &h_w_g, GPOINTS * sizeof(dfloat));
+
+    cudaMemcpyToSymbol(CIX, &h_cix, FPOINTS * sizeof(int));
+    cudaMemcpyToSymbol(CIY, &h_ciy, FPOINTS * sizeof(int));
+    cudaMemcpyToSymbol(CIZ, &h_ciz, FPOINTS * sizeof(int));
 
     free(h_pxx);
     free(h_pyy);
@@ -136,5 +154,6 @@ void initializeVars() {
     free(h_pxy);
     free(h_pxz);
     free(h_pyz);
+    free(h_rho);
 }
 

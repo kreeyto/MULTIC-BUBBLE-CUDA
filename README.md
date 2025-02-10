@@ -5,8 +5,7 @@ Bubble-GPU é um projeto para simulações de fluidos usando o método Lattice B
 ## Estrutura do Projeto
 
 - **src/**: Contém o código-fonte principal, incluindo kernels CUDA e scripts de compilação.
-- **bin/**: Diretório de saída para os binários compilados.
-- **matlabFiles/**: Contém scripts MATLAB para análise e visualização.
+- **bin/**: Diretório de saída para os binários compilados e resultados de simulação.
 - **post/**: Scripts para pós-processamento dos resultados da simulação.
 - **pipeline.sh**: Script principal para executar o pipeline de compilação, simulação e pós-processamento.
 
@@ -17,37 +16,31 @@ Bubble-GPU é um projeto para simulações de fluidos usando o método Lattice B
    Use o script `pipeline.sh` para compilar e executar o simulador:
 
    ```bash
-   ./pipeline.sh <fluid_model> <phase_model> <id> <save_binary>
+   ./pipeline.sh <fluid_model> <phase_model> <id>
    ```
 
    - **`<fluid_model>`**: Modelo de fluido (exemplo: `FD3Q19`).
    - **`<phase_model>`**: Modelo de fase (exemplo: `PD3Q15`).
    - **`<id>`**: Identificador único para a simulação (exemplo: `000`).
-   - **`<save_binary>`**: Defina `0` para compilar e executar sem salvar binários (para visualização em MATLAB) ou `1` 		para salvar (para visualização em Paraview).
 
    Exemplo:
 
    ```bash
-   ./pipeline.sh FD3Q19 PD3Q15 001 1
+   ./pipeline.sh FD3Q19 PD3Q15 001
    ```
 
 2. **Resultados**:
    - Saídas de simulação serão salvas em:
-     - `bin/<fluid_model>_<phase_model>/<id>/` (se `save_binary=1`).
-     - `matlabFiles/<fluid_model>_<phase_model>/<id>/` (se `save_binary=0`).
+     - `bin/<fluid_model>_<phase_model>/<id>/`
 
 3. **Pós-Processamento**:
-   Caso `save_binary=1`, o script também executará o pós-processamento automaticamente.
+   O script também executará automaticamente o pós-processamento.
 
 ## Exemplos de Execução
 
-- **Simulação sem salvar binários**:
+- **Executar uma simulação**:
   ```bash
-  ./pipeline.sh FD3Q19 PD3Q15 001 0
+  ./pipeline.sh FD3Q19 PD3Q15 001
   ```
 
-- **Simulação salvando binários**:
-  ```bash
-  ./pipeline.sh FD3Q19 PD3Q15 002 1
-  ```
 
