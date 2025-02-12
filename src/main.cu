@@ -9,10 +9,10 @@
 #include <iomanip>
 #include <chrono>
 
-#include "precision.cuh"
+#include "precision.h"
 
 int main(int argc, char* argv[]) {
-    auto start_time = std::chrono::high_resolution_clock::now();
+    auto start_time = chrono::high_resolution_clock::now();
     if (argc < 4) {
         cerr << "Erro: Uso: " << argv[0] << " F<fluid velocity set> P<phase field velocity set> <id>" << endl;
         return 1;
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     // ============================================================================================================================================================= //
 
     // ========================= //
-    int stamp = 100, nsteps = 10000;
+    int stamp = 100, nsteps = 5000;
     // ========================= //
     initializeVars();
 
@@ -67,6 +67,9 @@ int main(int argc, char* argv[]) {
     // ========================================= //
 
     vector<dfloat> phi_host(nx * ny * nz);
+    vector<dfloat> ux_host(nx * ny * nz);
+    vector<dfloat> uy_host(nx * ny * nz);
+    vector<dfloat> uz_host(nx * ny * nz);
 
     for (int t = 0; t < nsteps; ++t) {
         cout << "Passo " << t << " de " << nsteps << " iniciado..." << endl;
@@ -104,12 +107,13 @@ int main(int argc, char* argv[]) {
             d_ux, d_uy, d_uz, 
             d_normx, d_normy, d_normz,
             d_ffx, d_ffy, d_ffz,
-            d_rho, d_phi, d_f, d_g, 
+            d_rho, d_phi, d_g, 
             d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, 
             nx, ny, nz, d_f_coll 
         );
         cudaDeviceSynchronize();
 
+        // ======================================== //
         streamingCalcNew<<<numBlocks, threadsPerBlock>>> (
             d_f_coll, 
             nx, ny, nz, d_f 
@@ -121,26 +125,44 @@ int main(int argc, char* argv[]) {
             nx, ny, nz
         );
         cudaDeviceSynchronize();
-        
-        fgBoundary<<<numBlocks, threadsPerBlock>>> (
-            d_f, d_g_out, d_rho, d_phi, 
+        // ======================================== //
+
+        // ======================================== //
+        fgBoundary_f<<<numBlocks, threadsPerBlock>>> (
+            d_f, d_rho, 
+            nx, ny, nz
+        );
+        cudaDeviceSynchronize();
+
+        fgBoundary_g<<<numBlocks, threadsPerBlock>>> (
+            d_g_out, d_phi, 
             nx, ny, nz
         );
         cudaDeviceSynchronize();
         cudaMemcpy(d_g, d_g_out, nx * ny * nz * GPOINTS * sizeof(dfloat), cudaMemcpyDeviceToDevice);
-
-        boundaryConditions<<<numBlocks, threadsPerBlock>>>(
+        // ======================================== //
+        
+        // ======================================== //
+        boundaryConditions_z<<<numBlocks, threadsPerBlock>>> (
             d_phi, nx, ny, nz
         );
         cudaDeviceSynchronize();
 
+        boundaryConditions_y<<<numBlocks, threadsPerBlock>>> (
+            d_phi, nx, ny, nz
+        );
+        cudaDeviceSynchronize();
+        // ======================================== //
+
         if (t % stamp == 0) {
+
             checkCudaErrors(cudaMemcpy(phi_host.data(), d_phi, nx * ny * nz * sizeof(dfloat), cudaMemcpyDeviceToHost));
             ostringstream filename_phi_bin;
             filename_phi_bin << sim_dir << id << "_phi" << setw(6) << setfill('0') << t << ".bin";
             ofstream file_phi_bin(filename_phi_bin.str(), ios::binary);
             file_phi_bin.write(reinterpret_cast<const char*>(phi_host.data()), phi_host.size() * sizeof(dfloat));
             file_phi_bin.close();
+
             cout << "Passo " << t << ": Dados salvos em " << sim_dir << endl;
         }
     }
@@ -152,9 +174,9 @@ int main(int argc, char* argv[]) {
                         };
     freeMemory(pointers, 24);  
 
-    auto end_time = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed_time = end_time - start_time;
-    std::cout << "Tempo total de execução: " << elapsed_time.count() << " segundos" << std::endl;
+    auto end_time = chrono::high_resolution_clock::now();
+    chrono::duration<double> elapsed_time = end_time - start_time;
+    cout << "Tempo total de execução: " << elapsed_time.count() << " segundos" << endl;
 
     return 0;
 }

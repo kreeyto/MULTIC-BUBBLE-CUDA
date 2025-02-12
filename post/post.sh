@@ -9,4 +9,13 @@ ID=$1
 FLUID_MODEL=$2
 PHASE_MODEL=$3
 
-python3 exampleVTK.py "$ID" "$FLUID_MODEL" "$PHASE_MODEL"
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    PYTHON_CMD="python3"
+elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+    PYTHON_CMD="python"
+else
+    echo "Sistema operacional não reconhecido. Tentando python por padrão."
+    PYTHON_CMD="python"
+fi
+
+$PYTHON_CMD exampleVTK.py "$ID" "$FLUID_MODEL" "$PHASE_MODEL"

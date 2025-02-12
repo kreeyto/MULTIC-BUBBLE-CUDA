@@ -3,12 +3,16 @@
 #include <iostream>
 #include <vector>
 
-#include "precision.cuh"
+#include "precision.h"
 
 dfloat res = 1.0;
 int nx = 128; int ny = 128; int nz = 128;  
 
-__constant__ dfloat TAU, CSSQ, OMEGA, SHARP_C, SIGMA;
+__constant__ dfloat TAU;
+__constant__ dfloat CSSQ;
+__constant__ dfloat OMEGA;
+__constant__ dfloat SHARP_C;
+__constant__ dfloat SIGMA;
 __constant__ dfloat W[FPOINTS], W_G[GPOINTS];
 __constant__ int CIX[FPOINTS], CIY[FPOINTS], CIZ[FPOINTS];
 
@@ -28,30 +32,51 @@ dfloat *h_pyz = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 dfloat *h_rho = (dfloat *)malloc(nx * ny * nz * sizeof(dfloat));
 
 // ========================================================================== parametros ========================================================================== //
-dfloat h_tau = 0.7;
+dfloat h_tau = 0.505;
 dfloat h_cssq = 1.0 / 3.0;
 dfloat h_omega = 1.0 / h_tau;
 dfloat h_sharp_c = 0.15 * 3.0;
 dfloat h_sigma = 0.1;
 
+// fluid velocity set
 #ifdef FD3Q19
     int h_cix[19] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0 };
     int h_ciy[19] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1 };
     int h_ciz[19] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1 };
+#elif defined(FD3Q27)
+    int h_cix[27] = { 0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 1, -1, -1, 1 };
+    int h_ciy[27] = { 0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1, 1, -1, 1, -1, -1, 1, 1, -1 };
+    int h_ciz[27] = { 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1 };
 #endif
 
+// fluid weights
 #ifdef FD3Q19
     dfloat h_w[19] = {
         1.0 / 3.0, 
         1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0,
         1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0
     };
+#elif defined(FD3Q27)
+    dfloat h_w[27] = {
+        8.0 / 27.0,
+        2.0 / 27.0, 2.0 / 27.0, 2.0 / 27.0, 2.0 / 27.0, 2.0 / 27.0, 2.0 / 27.0, 
+        1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 
+        1.0 / 216.0, 1.0 / 216.0, 1.0 / 216.0, 1.0 / 216.0, 1.0 / 216.0, 1.0 / 216.0, 1.0 / 216.0, 1.0 / 216.0
+    };
 #endif
+
+// phase field weights
 #ifdef PD3Q15
     dfloat h_w_g[15] = {
         2.0 / 9.0, 
         1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0,
         1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0
+    };
+#elif defined(PD3Q19)
+    dfloat h_w_g[19] = {
+        1.0 / 3.0, 
+        1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0,
+        1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0
     };
 #endif
 // =============================================================================================================================================================== //
@@ -64,20 +89,21 @@ void initializeVars() {
     size_t pf_size = GPOINTS * sizeof(dfloat);
     size_t single_size = sizeof(dfloat);
 
-    auto IDX3D = [&](int i, int j, int k) {
-        return ((i) + (j) * nx + (k) * nx * ny);
+    auto IDX3D = [=](int i, int j, int k) -> int {
+        return i + j * nx + k * nx * ny;
     };
 
     for (int k = 0; k < nz; ++k) {
         for (int j = 0; j < ny; ++j) {
             for (int i = 0; i < nx; ++i) {
-                h_pxx[IDX3D(i,j,k)] = 1.0;
-                h_pyy[IDX3D(i,j,k)] = 1.0;
-                h_pzz[IDX3D(i,j,k)] = 1.0;
-                h_pxy[IDX3D(i,j,k)] = 1.0;
-                h_pxz[IDX3D(i,j,k)] = 1.0;
-                h_pyz[IDX3D(i,j,k)] = 1.0;
-                h_rho[IDX3D(i,j,k)] = 1.0;
+                int idx = IDX3D(i, j, k);
+                h_pxx[idx] = 1.0;
+                h_pyy[idx] = 1.0;
+                h_pzz[idx] = 1.0;
+                h_pxy[idx] = 1.0;
+                h_pxz[idx] = 1.0;
+                h_pyz[idx] = 1.0;
+                h_rho[idx] = 1.0;
             }
         }
     }

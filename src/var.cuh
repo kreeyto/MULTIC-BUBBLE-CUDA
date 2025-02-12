@@ -1,6 +1,6 @@
 #pragma once
 
-#include "precision.cuh"
+#include "precision.h"
 
 extern dfloat res;
 extern int nx, ny, nz;

@@ -4,7 +4,7 @@
 #include "var.cuh"
 #include <math.h>
 
-#include "precision.cuh"
+#include "precision.h"
 
 __global__ void initPhase(
     dfloat * __restrict__ phi, 
@@ -79,7 +79,6 @@ __global__ void collisionCalc(
     const dfloat * __restrict__ ffz,
     const dfloat * __restrict__ rho,
     const dfloat * __restrict__ phi,
-    const dfloat * __restrict__ f,
     dfloat * __restrict__ g,
     const dfloat * __restrict__ pxx,
     const dfloat * __restrict__ pyy,
@@ -103,6 +102,7 @@ __global__ void streamingCalc(
     int nx, int ny, int nz
 );
 
+/*
 __global__ void fgBoundary(
     dfloat * __restrict__ f,
     dfloat * __restrict__ g,
@@ -110,8 +110,26 @@ __global__ void fgBoundary(
     const dfloat * __restrict__ phi,
     int nx, int ny, int nz
 );
+*/
 
-__global__ void boundaryConditions(
+__global__ void fgBoundary_f(
+    dfloat * __restrict__ f,
+    const dfloat * __restrict__ rho,
+    int nx, int ny, int nz
+);
+
+__global__ void fgBoundary_g(
+    dfloat * __restrict__ g,
+    const dfloat * __restrict__ phi,
+    int nx, int ny, int nz
+);
+
+__global__ void boundaryConditions_z(
+    dfloat * __restrict__ phi,
+    int nx, int ny, int nz
+);
+
+__global__ void boundaryConditions_y(
     dfloat * __restrict__ phi,
     int nx, int ny, int nz
 );
