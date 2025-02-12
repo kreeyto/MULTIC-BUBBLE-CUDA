@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     // ============================================================================================================================================================= //
 
     // ========================= //
-    int stamp = 100, nsteps = 5000;
+    int stamp = 10, nsteps = 100;
     // ========================= //
     initializeVars();
 
@@ -67,9 +67,9 @@ int main(int argc, char* argv[]) {
     // ========================================= //
 
     vector<dfloat> phi_host(nx * ny * nz);
-    vector<dfloat> ux_host(nx * ny * nz);
-    vector<dfloat> uy_host(nx * ny * nz);
-    vector<dfloat> uz_host(nx * ny * nz);
+    //vector<dfloat> ux_host(nx * ny * nz);
+    //vector<dfloat> uy_host(nx * ny * nz);
+    //vector<dfloat> uz_host(nx * ny * nz);
 
     for (int t = 0; t < nsteps; ++t) {
         cout << "Passo " << t << " de " << nsteps << " iniciado..." << endl;
@@ -113,7 +113,6 @@ int main(int argc, char* argv[]) {
         );
         cudaDeviceSynchronize();
 
-        // ======================================== //
         streamingCalcNew<<<numBlocks, threadsPerBlock>>> (
             d_f_coll, 
             nx, ny, nz, d_f 
@@ -125,9 +124,7 @@ int main(int argc, char* argv[]) {
             nx, ny, nz
         );
         cudaDeviceSynchronize();
-        // ======================================== //
 
-        // ======================================== //
         fgBoundary_f<<<numBlocks, threadsPerBlock>>> (
             d_f, d_rho, 
             nx, ny, nz
@@ -140,9 +137,7 @@ int main(int argc, char* argv[]) {
         );
         cudaDeviceSynchronize();
         cudaMemcpy(d_g, d_g_out, nx * ny * nz * GPOINTS * sizeof(dfloat), cudaMemcpyDeviceToDevice);
-        // ======================================== //
         
-        // ======================================== //
         boundaryConditions_z<<<numBlocks, threadsPerBlock>>> (
             d_phi, nx, ny, nz
         );
@@ -152,7 +147,6 @@ int main(int argc, char* argv[]) {
             d_phi, nx, ny, nz
         );
         cudaDeviceSynchronize();
-        // ======================================== //
 
         if (t % stamp == 0) {
 

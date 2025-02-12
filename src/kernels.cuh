@@ -102,16 +102,6 @@ __global__ void streamingCalc(
     int nx, int ny, int nz
 );
 
-/*
-__global__ void fgBoundary(
-    dfloat * __restrict__ f,
-    dfloat * __restrict__ g,
-    const dfloat * __restrict__ rho,
-    const dfloat * __restrict__ phi,
-    int nx, int ny, int nz
-);
-*/
-
 __global__ void fgBoundary_f(
     dfloat * __restrict__ f,
     const dfloat * __restrict__ rho,

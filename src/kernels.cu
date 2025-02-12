@@ -478,8 +478,6 @@ __global__ void fgBoundary(
 }
 */
 
-// Kernel para atualizar f, reestruturado para evitar condições de corrida.
-// Cada thread processa uma célula (i,j,k) para cada direção l.
 __global__ void fgBoundary_f(
     dfloat * __restrict__ f,
     const dfloat * __restrict__ rho,
@@ -490,19 +488,14 @@ __global__ void fgBoundary_f(
     int k = blockIdx.z * blockDim.z + threadIdx.z;
     if(i >= nx || j >= ny || k >= nz) return;
     
-    // Para cada direção associada à estrutura de f:
     for (int l = 0; l < FPOINTS; ++l) {
-        // Determina a célula de contorno "fonte" correspondente:
         int bi = i - CIX[l];
         int bj = j - CIY[l];
         int bk = k - CIZ[l];
-        // Se a célula fonte estiver fora do domínio, ignora:
         if(bi < 0 || bi >= nx || bj < 0 || bj >= ny || bk < 0 || bk >= nz)
             continue;
-        // Verifica se a célula fonte é realmente uma célula de contorno:
         if(bi == 0 || bi == nx-1 || bj == 0 || bj == ny-1 || bk == 0 || bk == nz-1) {
             int boundary_idx = bi + bj * nx + bk * nx * ny;
-            // Cada slot (i,j,k,l) é atualizado de forma única.
             f[IDX4D(i, j, k, l)] = rho[boundary_idx] * W[l];
         }
     }

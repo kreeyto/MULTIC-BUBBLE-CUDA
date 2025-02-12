@@ -34,16 +34,6 @@ else
     echo -e "${GREEN}Diretório limpo com sucesso.${RESET}"
 fi
 
-GITIGNORE_PATH=$BASE_DIR/.gitignore
-SIM_RELATIVE_PATH="bin/${FLUID_MODEL}_${PHASE_MODEL}/${ID}/*"
-KEEP_RELATIVE_PATH="!bin/${FLUID_MODEL}_${PHASE_MODEL}/${ID}/.gitkeep"
-
-if ! grep -Fxq "${SIM_RELATIVE_PATH}" "${GITIGNORE_PATH}"; then
-    echo "${SIM_RELATIVE_PATH}" >> "${GITIGNORE_PATH}"
-    echo "${KEEP_RELATIVE_PATH}" >> "${GITIGNORE_PATH}"
-    echo -e "${GREEN}Entradas adicionadas à .gitignore (bin):${RESET}"
-fi
-
 echo -e "${YELLOW}Indo para ${CYAN}$BASE_DIR/src${RESET}"
 cd $BASE_DIR/src || { echo -e "${RED}Erro: Diretório ${CYAN}$BASE_DIR/src${RED} não encontrado!${RESET}"; exit 1; }
 
