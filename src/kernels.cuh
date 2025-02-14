@@ -4,11 +4,11 @@
 #include "var.cuh"
 #include <math.h>
 
-#include "precision.h"
+#include "precision.cuh"
 
 __global__ void initPhase(
     dfloat * __restrict__ phi, 
-    int res, int nx, int ny, int nz
+    int nx, int ny, int nz
 );
 
 __global__ void initDist(
@@ -120,6 +120,11 @@ __global__ void boundaryConditions_z(
 );
 
 __global__ void boundaryConditions_y(
+    dfloat * __restrict__ phi,
+    int nx, int ny, int nz
+);
+
+__global__ void boundaryConditions_x(
     dfloat * __restrict__ phi,
     int nx, int ny, int nz
 );

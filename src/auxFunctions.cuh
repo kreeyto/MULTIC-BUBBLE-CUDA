@@ -6,7 +6,7 @@
 #include <string>
 #include <cstdlib>
 
-#include "precision.h"
+#include "precision.cuh"
 
 void freeMemory(dfloat **pointers, int count);
 

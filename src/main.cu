@@ -9,7 +9,7 @@
 #include <iomanip>
 #include <chrono>
 
-#include "precision.h"
+#include "precision.cuh"
 
 int main(int argc, char* argv[]) {
     auto start_time = chrono::high_resolution_clock::now();
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     // ============================================================================================================================================================= //
 
     // ========================= //
-    int stamp = 10, nsteps = 100;
+    int stamp = 100, nsteps = 5000;
     // ========================= //
     initializeVars();
 
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 
     // ================== INIT ================== //
     initPhase<<<numBlocks, threadsPerBlock>>> (
-        d_phi, res, nx, ny, nz
+        d_phi, nx, ny, nz
     );
     cudaDeviceSynchronize();
 
@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
             d_ffx, d_ffy, d_ffz,
             d_rho, d_phi, d_g, 
             d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, 
-            nx, ny, nz, d_f_coll 
+            nx, ny, nz, d_f_coll
         );
         cudaDeviceSynchronize();
 
@@ -144,6 +144,11 @@ int main(int argc, char* argv[]) {
         cudaDeviceSynchronize();
 
         boundaryConditions_y<<<numBlocks, threadsPerBlock>>> (
+            d_phi, nx, ny, nz
+        );
+        cudaDeviceSynchronize();
+
+        boundaryConditions_x<<<numBlocks, threadsPerBlock>>> (
             d_phi, nx, ny, nz
         );
         cudaDeviceSynchronize();

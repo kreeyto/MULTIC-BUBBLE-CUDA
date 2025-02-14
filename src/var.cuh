@@ -1,8 +1,8 @@
 #pragma once
 
-#include "precision.h"
+#include "precision.cuh"
 
-extern dfloat res;
+extern int mesh;
 extern int nx, ny, nz;
 
 extern __constant__ dfloat TAU, CSSQ, OMEGA, SHARP_C, SIGMA;

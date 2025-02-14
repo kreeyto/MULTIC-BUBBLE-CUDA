@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include "errorDef.cuh"
 
-#include "precision.h"
+#include "precision.cuh"
 
 void freeMemory(dfloat **pointers, int count) {
     for (int i = 0; i < count; ++i) {

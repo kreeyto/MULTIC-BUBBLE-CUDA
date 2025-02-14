@@ -1,6 +1,6 @@
 // precision.h
-#ifndef PRECISION_H
-#define PRECISION_H
+#ifndef PRECISION_CUH
+#define PRECISION_CUH
 
 using namespace std;
 #define SINGLE_PRECISION
@@ -26,4 +26,4 @@ using namespace std;
     #define GPOINTS 19
 #endif
 
-#endif // PRECISION_H
+#endif // PRECISION_CUH

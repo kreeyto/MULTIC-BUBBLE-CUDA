@@ -3,10 +3,10 @@
 #include <iostream>
 #include <vector>
 
-#include "precision.h"
+#include "precision.cuh"
 
-dfloat res = 1.0;
-int nx = 128; int ny = 128; int nz = 128;  
+int mesh = 128;
+int nx = mesh; int ny = mesh; int nz = mesh;  
 
 __constant__ dfloat TAU;
 __constant__ dfloat CSSQ;
