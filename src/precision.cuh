@@ -1,4 +1,4 @@
-// precision.h
+// precision.cuh
 #ifndef PRECISION_CUH
 #define PRECISION_CUH
 
