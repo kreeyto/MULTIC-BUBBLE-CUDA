@@ -34,6 +34,12 @@ __global__ void initPhase(
     phi[idx3D] = phi_val;
 }
 
+// =================================================================================================== //
+
+
+
+// =================================================================================================== //
+
 __global__ void initDist(
     const dfloat * __restrict__ rho, 
     const dfloat * __restrict__ phi, 
@@ -63,9 +69,12 @@ __global__ void initDist(
     }
 }
 
+// =================================================================================================== //
+
+
+
 // ============================================================================================== //
 
-// check if explicit sums are better optimized
 __global__ void phiCalc(
     dfloat * __restrict__ phi,
     const dfloat * __restrict__ g,
@@ -89,7 +98,12 @@ __global__ void phiCalc(
     phi[idx3D] = sum;
 }
 
-// all coherent with matlab
+// =================================================================================================== //
+
+
+
+// =================================================================================================== //
+
 __global__ void gradCalc(
     const dfloat * __restrict__ phi,
     dfloat * __restrict__ mod_grad,
@@ -125,13 +139,19 @@ __global__ void gradCalc(
     dfloat gmag = sqrt(gmag_sq);
 
     mod_grad[idx3D] = gmag;
-    normx[idx3D] = grad_fix / (gmag + 1e-9);
-    normy[idx3D] = grad_fiy / (gmag + 1e-9);
-    normz[idx3D] = grad_fiz / (gmag + 1e-9);
+    dfloat factor = 1.0 / (gmag + 1e-9);  
+    normx[idx3D] = grad_fix * factor;
+    normy[idx3D] = grad_fiy * factor;
+    normz[idx3D] = grad_fiz * factor;
     indicator[idx3D] = gmag;
 }
 
-// all coherent with matlab
+// =================================================================================================== //
+
+
+
+// =================================================================================================== //
+
 __global__ void curvatureCalc(
     dfloat * __restrict__ curvature,
     const dfloat * __restrict__ indicator,
@@ -172,14 +192,18 @@ __global__ void curvatureCalc(
 
     dfloat mult = SIGMA * curv;
 
-    // write to global memory
     curvature[idx3D] = curv;
     ffx[idx3D] = mult * normx_ * ind_;
     ffy[idx3D] = mult * normy_ * ind_;
     ffz[idx3D] = mult * normz_ * ind_;
 }
 
-// all coherent with matlab
+// =================================================================================================== //
+
+
+
+// =================================================================================================== //
+
 __global__ void momentiCalc(
     dfloat * __restrict__ ux,
     dfloat * __restrict__ uy,
@@ -221,30 +245,30 @@ __global__ void momentiCalc(
 
     #ifdef FD3Q19
         dfloat sumUx = fVal[1] - fVal[2] + fVal[7] - fVal[8] +
-            fVal[9] - fVal[10] + fVal[13] - fVal[14] +
-            fVal[15] - fVal[16];
+                       fVal[9] - fVal[10] + fVal[13] - fVal[14] +
+                       fVal[15] - fVal[16];
         dfloat sumUy = fVal[3] - fVal[4] + fVal[7] - fVal[8] +
-            fVal[11] - fVal[12] - fVal[13] + fVal[14] +
-            fVal[17] - fVal[18];
+                       fVal[11] - fVal[12] - fVal[13] + fVal[14] +
+                       fVal[17] - fVal[18];
         dfloat sumUz = fVal[5] - fVal[6] + fVal[9] - fVal[10] +
-            fVal[11] - fVal[12] - fVal[15] + fVal[16] -
-            fVal[17] + fVal[18];
+                       fVal[11] - fVal[12] - fVal[15] + fVal[16] -
+                       fVal[17] + fVal[18];
     #elif defined(FD3Q27)
         dfloat sumUx = fVal[1] - fVal[2] + fVal[7] - fVal[8] + fVal[9] - 
-            fVal[10] + fVal[13] - fVal[14] + fVal[15] - 
-            fVal[16] + fVal[19] - fVal[20] + fVal[21] - 
-            fVal[22] + fVal[23] - fVal[24] - fVal[25] + 
-            fVal[26];
+                       fVal[10] + fVal[13] - fVal[14] + fVal[15] - 
+                       fVal[16] + fVal[19] - fVal[20] + fVal[21] - 
+                       fVal[22] + fVal[23] - fVal[24] - fVal[25] + 
+                       fVal[26];
         dfloat sumUy = fVal[3] - fVal[4] + fVal[7] - fVal[8] + fVal[11] - 
-            fVal[12] - fVal[13] + fVal[14] + fVal[17] - 
-            fVal[18] + fVal[19] - fVal[20] + fVal[21] - 
-            fVal[22] - fVal[23] + fVal[24] + fVal[25] - 
-            fVal[26];
+                       fVal[12] - fVal[13] + fVal[14] + fVal[17] - 
+                       fVal[18] + fVal[19] - fVal[20] + fVal[21] - 
+                       fVal[22] - fVal[23] + fVal[24] + fVal[25] - 
+                       fVal[26];
         dfloat sumUz = fVal[5] - fVal[6] + fVal[9] - fVal[10] + fVal[11] - 
-            fVal[12] - fVal[15] + fVal[16] - fVal[17] + 
-            fVal[18] + fVal[19] - fVal[20] - fVal[21] + 
-            fVal[22] + fVal[23] - fVal[24] + fVal[25] - 
-            fVal[26];
+                       fVal[12] - fVal[15] + fVal[16] - fVal[17] + 
+                       fVal[18] + fVal[19] - fVal[20] - fVal[21] + 
+                       fVal[22] + fVal[23] - fVal[24] + fVal[25] - 
+                       fVal[26];
     #endif
 
     dfloat invRhoOld = 1.0 / rhoOld;
@@ -276,7 +300,7 @@ __global__ void momentiCalc(
         dfloat HeF = common * ((CIX[l] - uxVal) * ffx_val +
                                (CIY[l] - uyVal) * ffy_val +
                                (CIZ[l] - uzVal) * ffz_val) * invRhoNewCssq;
-        dfloat feq = common - 0.5 * HeF;
+        dfloat feq = common - 0.5 * HeF; 
         fneq[l] = fVal[l] - feq;
     }
 
@@ -329,7 +353,12 @@ __global__ void momentiCalc(
     uz[idx3D] = uzVal;
 }
 
-// all coherent with matlab
+// =================================================================================================== //
+
+
+
+// =================================================================================================== //
+
 __global__ void collisionCalc(
     const dfloat * __restrict__ ux,
     const dfloat * __restrict__ uy,
@@ -380,33 +409,31 @@ __global__ void collisionCalc(
         dfloat udotc2 = udotc * udotc;
         dfloat feq = W[l] * (rho_val + rho_val * (udotc + 0.5 * udotc2 - uu));
         dfloat HeF = 0.5 * feq * ( (CIX[l] - ux_val) * ffx_val +
-                                     (CIY[l] - uy_val) * ffy_val +
-                                     (CIZ[l] - uz_val) * ffz_val ) * inv_rho_CSSQ;
-        dfloat fneq = (CIX[l]*CIX[l] - CSSQ) * pxx_val +
-                      (CIY[l]*CIY[l] - CSSQ) * pyy_val +
-                      (CIZ[l]*CIZ[l] - CSSQ) * pzz_val +
-                      2.0 * CIX[l] * CIY[l] * pxy_val +
-                      2.0 * CIX[l] * CIZ[l] * pxz_val +
-                      2.0 * CIY[l] * CIZ[l] * pyz_val;
-        f_coll[idx3D + l * nxyz] = feq + omc * (W[l] / (2.0 * CSSQ * CSSQ)) * fneq + HeF;
+                                   (CIY[l] - uy_val) * ffy_val +
+                                   (CIZ[l] - uz_val) * ffz_val ) * inv_rho_CSSQ;
+        dfloat fneq = (W[l] / (2.0 * CSSQ * CSSQ)) * ((CIX[l]*CIX[l] - CSSQ) * pxx_val +
+                                                      (CIY[l]*CIY[l] - CSSQ) * pyy_val +
+                                                      (CIZ[l]*CIZ[l] - CSSQ) * pzz_val +
+                                                       2.0 * CIX[l] * CIY[l] * pxy_val +
+                                                       2.0 * CIX[l] * CIZ[l] * pxz_val +
+                                                       2.0 * CIY[l] * CIZ[l] * pyz_val
+                                                     );
+        f_coll[idx3D + l * nxyz] = feq + omc * fneq + HeF; 
     }
 
     for (int l = 0; l < GPOINTS; ++l) {
         dfloat udotc = (ux_val * CIX[l] + uy_val * CIY[l] + uz_val * CIZ[l]) * invCSSQ;
-        dfloat feq_g = W_G[l] * phi_val * (1.0 + udotc);
-        dfloat Hi = SHARP_C * phi_val * (1.0 - phi_val) *
+        dfloat geq = W_G[l] * phi_val * (1.0 + udotc);
+        dfloat Hi = W_G[l] * SHARP_C * phi_val * (1.0 - phi_val) *
                     (CIX[l] * normx_val + CIY[l] * normy_val + CIZ[l] * normz_val);
-        g[idx3D + l * nxyz] = feq_g + W_G[l] * Hi;
+        g[idx3D + l * nxyz] = geq + Hi;
     }
 }
 
-
-// ===================== TENHO LÁ MINHAS SUSPEITAS DAQUI PRA BAIXO ===================== //
-
-__global__ void streamingCalcNew(
+__global__ void streamingColl(
+    dfloat * __restrict__ f,
     const dfloat * __restrict__ f_coll,
-    int nx, int ny, int nz,
-    dfloat * __restrict__ f 
+    int nx, int ny, int nz
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -417,21 +444,29 @@ __global__ void streamingCalcNew(
 
     int NxNy = nx * ny;
     int NxNyNz = NxNy * nz;
-    int dstBase = i + j * nx + k * NxNy;
+    int srcBase = i + j * nx + k * NxNy;
 
     for (int l = 0; l < FPOINTS; ++l) {
-        int src_i = (i - CIX[l] + nx) & (nx-1); // & (nx-1) if div by 2
-        int src_j = (j - CIY[l] + ny) & (ny-1);
-        int src_k = (k - CIZ[l] + nz) & (nz-1);
-        int srcBase = src_i + src_j * nx + src_k * NxNy;
-        int dstIdx = l * NxNyNz + dstBase;
-        int srcIdx = l * NxNyNz + srcBase;
-        f[dstIdx] = f_coll[srcIdx];
+        int dst_i = i + CIX[l]; 
+        int dst_j = j + CIY[l];
+        int dst_k = k + CIZ[l];
+        if (dst_i >= 0 && dst_i < nx && dst_j >= 0 && dst_j < ny && dst_k >= 0 && dst_k < nz) {
+            int dstBase = dst_i + dst_j * nx + dst_k * NxNy;
+            int srcIdx = l * NxNyNz + srcBase;
+            int dstIdx = l * NxNyNz + dstBase;
+            f[dstIdx] = f_coll[srcIdx];  
+        }
     }
 }
 
+// =================================================================================================== //
+
+
+
+// =================================================================================================== //
+
 __global__ void streamingCalc(
-    const dfloat * __restrict__ g_in,
+    const dfloat * __restrict__ g,
     dfloat * __restrict__ g_out,
     int nx, int ny, int nz
 ) {
@@ -446,15 +481,21 @@ __global__ void streamingCalc(
     int dstBase = i + j * nx + k * NxNy;
 
     for (int l = 0; l < GPOINTS; ++l) {
-        int src_i = (i - CIX[l] + nx) & (nx-1); // & (nx-1) if div by 2
+        int src_i = (i - CIX[l] + nx) & (nx-1);
         int src_j = (j - CIY[l] + ny) & (ny-1);
         int src_k = (k - CIZ[l] + nz) & (nz-1);
         int srcBase = src_i + src_j * nx + src_k * NxNy;
         int dstIdx = l * NxNyNz + dstBase;
         int srcIdx = l * NxNyNz + srcBase;
-        g_out[dstIdx] = g_in[srcIdx];
+        g_out[dstIdx] = g[srcIdx];
     }
 }
+
+// =================================================================================================== //
+
+
+
+// =================================================================================================== //
 
 __global__ void fgBoundary_f(
     dfloat * __restrict__ f,
@@ -465,17 +506,16 @@ __global__ void fgBoundary_f(
     int j = blockIdx.y * blockDim.y + threadIdx.y;
     int k = blockIdx.z * blockDim.z + threadIdx.z;
 
-    if(i >= nx || j >= ny || k >= nz) return;
-    
-    for (int l = 0; l < FPOINTS; ++l) {
-        int bi = i - CIX[l];
-        int bj = j - CIY[l];
-        int bk = k - CIZ[l];
-        if(bi < 0 || bi >= nx || bj < 0 || bj >= ny || bk < 0 || bk >= nz)
-            continue;
-        if(bi == 0 || bi == nx-1 || bj == 0 || bj == ny-1 || bk == 0 || bk == nz-1) {
-            int boundary_idx = bi + bj * nx + bk * nx * ny;
-            f[IDX4D(i,j,k,l)] = rho[boundary_idx] * W[l];
+    if (i >= nx || j >= ny || k >= nz) return;
+
+    if (i == 0 || i == nx - 1 || j == 0 || j == ny - 1 || k == 0 || k == nz - 1) {
+        for (int l = 0; l < FPOINTS; ++l) {
+            int ni = i + CIX[l];
+            int nj = j + CIY[l];
+            int nk = k + CIZ[l];
+            if (ni >= 0 && ni < nx && nj >= 0 && nj < ny && nk >= 0 && nk < nz) {
+                f[IDX4D(ni,nj,nk,l)] = rho[IDX3D(i,j,k)] * W[l];
+            }
         }
     }
 }
@@ -488,57 +528,56 @@ __global__ void fgBoundary_g(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
     int k = blockIdx.z * blockDim.z + threadIdx.z;
-    
-    if(i >= nx || j >= ny || k >= nz) return;
-    
-    for (int l = 0; l < GPOINTS; ++l) {
-        int bi = i - CIX[l];
-        int bj = j - CIY[l];
-        int bk = k - CIZ[l];
-        if(bi < 0 || bi >= nx || bj < 0 || bj >= ny || bk < 0 || bk >= nz)
-            continue;
-        if(bi == 0 || bi == nx-1 || bj == 0 || bj == ny-1 || bk == 0 || bk == nz-1) {
-            int boundary_idx = bi + bj * nx + bk * nx * ny;
-            g[IDX4D(i,j,k,l)] = phi[boundary_idx] * W_G[l];
+
+    if (i >= nx || j >= ny || k >= nz) return;
+
+    if (i == 0 || i == nx - 1 || j == 0 || j == ny - 1 || k == 0 || k == nz - 1) {
+        for (int l = 0; l < GPOINTS; ++l) {
+            int ni = i + CIX[l];
+            int nj = j + CIY[l];
+            int nk = k + CIZ[l];
+            if (ni >= 0 && ni < nx && nj >= 0 && nj < ny && nk >= 0 && nk < nz) {
+                g[IDX4D(ni,nj,nk,l)] = phi[IDX3D(i,j,k)] * W_G[l];
+            }
         }
     }
 }
 
-__global__ void boundaryConditions_z(
+__global__ void boundaryConditionsZ(
     dfloat * __restrict__ phi,
     int nx, int ny, int nz
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (i < nx && j < ny) {
-        phi[IDX3D(i,j,0)] = phi[IDX3D(i,j,1)];
-        phi[IDX3D(i,j,nz-1)] = phi[IDX3D(i,j,nz-2)];
+    if(i < nx && j < ny) {
+         phi[IDX3D(i,j,0)] = phi[IDX3D(i,j,1)];
+         phi[IDX3D(i,j,nz-1)] = phi[IDX3D(i,j,nz-2)];
     }
 }
 
-__global__ void boundaryConditions_y(
+__global__ void boundaryConditionsY(
     dfloat * __restrict__ phi,
     int nx, int ny, int nz
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int k = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (i < nx && k < nz) {
-        phi[IDX3D(i,0,k)] = phi[IDX3D(i,1,k)];
-        phi[IDX3D(i,ny-1,k)] = phi[IDX3D(i,ny-2,k)];
+    if(i < nx && k < nz) {
+         phi[IDX3D(i,0,k)] = phi[IDX3D(i,1,k)];
+         phi[IDX3D(i,ny-1,k)] = phi[IDX3D(i,ny-2,k)];
     }
 }
 
-__global__ void boundaryConditions_x(
+__global__ void boundaryConditionsX(
     dfloat * __restrict__ phi,
     int nx, int ny, int nz
 ) {
     int j = blockIdx.x * blockDim.x + threadIdx.x;
     int k = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (j < ny && k < nz) {
-        phi[IDX3D(0,j,k)] = phi[IDX3D(1,j,k)];
-        phi[IDX3D(nx-1,j,k)] = phi[IDX3D(nx-2,j,k)];
+    if(j < ny && k < nz) {
+         phi[IDX3D(0,j,k)] = phi[IDX3D(1,j,k)];
+         phi[IDX3D(nx-1,j,k)] = phi[IDX3D(nx-2,j,k)];
     }
 }
+
+
+// =================================================================================================== //

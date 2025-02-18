@@ -85,9 +85,6 @@ void initializeVars() {
     size_t size = nx * ny * nz * sizeof(dfloat);            
     size_t f_size = nx * ny * nz * FPOINTS * sizeof(dfloat); 
     size_t g_size = nx * ny * nz * GPOINTS * sizeof(dfloat); 
-    size_t vs_size = FPOINTS * sizeof(dfloat);
-    size_t pf_size = GPOINTS * sizeof(dfloat);
-    size_t single_size = sizeof(dfloat);
 
     auto IDX3D = [=](int i, int j, int k) -> int {
         return i + j * nx + k * nx * ny;

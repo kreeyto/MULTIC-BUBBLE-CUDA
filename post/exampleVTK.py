@@ -24,5 +24,5 @@ info = getSimInfo(path)
 for step in macrSteps:
     macr = getMacrsFromStep(step,path)
     # Save macroscopics to VTK format
-    print("Processing step", step)
+    print("Processando passo", step)
     saveVTK3D(macr, path, info['ID'] + "macr" + str(step).zfill(6), points=True)

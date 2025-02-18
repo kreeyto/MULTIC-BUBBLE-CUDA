@@ -55,3 +55,23 @@ void generateSimulationInfoFile(
         cerr << "Erro ao gerar o arquivo de informações: " << e.what() << endl;
     }
 }
+
+void copyAndSaveToBinary(
+    const dfloat* d_data, size_t size, const string& sim_dir, 
+    const string& id, int t, const string& var_name
+) {
+    vector<dfloat> host_data(size);
+    
+    checkCudaErrors(cudaMemcpy(host_data.data(), d_data, size * sizeof(dfloat), cudaMemcpyDeviceToHost));
+    
+    ostringstream filename;
+    filename << sim_dir << id << "_" << var_name << setw(6) << setfill('0') << t << ".bin";
+    
+    ofstream file(filename.str(), ios::binary);
+    if (!file) {
+        cerr << "Erro ao abrir o arquivo " << filename.str() << " para escrita." << endl;
+        return;
+    }
+    file.write(reinterpret_cast<const char*>(host_data.data()), host_data.size() * sizeof(dfloat));
+    file.close();
+}

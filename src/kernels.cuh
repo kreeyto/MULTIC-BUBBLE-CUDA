@@ -90,14 +90,14 @@ __global__ void collisionCalc(
     dfloat * __restrict__ f_coll
 );
 
-__global__ void streamingCalcNew(
+__global__ void streamingColl(
+    dfloat * __restrict__ f,
     const dfloat * __restrict__ f_coll,
-    int nx, int ny, int nz,
-    dfloat * __restrict__ f 
+    int nx, int ny, int nz
 );
 
 __global__ void streamingCalc(
-    const dfloat * __restrict__ g_in,
+    const dfloat * __restrict__ g,
     dfloat * __restrict__ g_out,
     int nx, int ny, int nz
 );
@@ -114,17 +114,17 @@ __global__ void fgBoundary_g(
     int nx, int ny, int nz
 );
 
-__global__ void boundaryConditions_z(
+__global__ void boundaryConditionsZ(
     dfloat * __restrict__ phi,
     int nx, int ny, int nz
 );
 
-__global__ void boundaryConditions_y(
+__global__ void boundaryConditionsY(
     dfloat * __restrict__ phi,
     int nx, int ny, int nz
 );
 
-__global__ void boundaryConditions_x(
+__global__ void boundaryConditionsX(
     dfloat * __restrict__ phi,
     int nx, int ny, int nz
 );
