@@ -1,7 +1,6 @@
 #include "kernels.cuh"
 #include "auxFunctions.cuh"
 #include "var.cuh"
-#include "errorDef.cuh"
 #include <fstream>
 #include <string>
 #include <iostream>
@@ -40,7 +39,7 @@ int main(int argc, char* argv[]) {
     // ============================================================================================================================================================= //
 
     // ========================= //
-    int stamp = 100, nsteps = 1000;
+    int stamp = 100, nsteps = 5000;
     // ========================= //
     initializeVars();
 
@@ -54,19 +53,25 @@ int main(int argc, char* argv[]) {
                    (ny + threadsPerBlock.y - 1) / threadsPerBlock.y,
                    (nz + threadsPerBlock.z - 1) / threadsPerBlock.z);
 
+    // STREAMS
+    cudaStream_t mainStream;
+    cudaStreamCreate(&mainStream);
+
     // ================== INIT ================== //
 
-        initPhase<<<numBlocks, threadsPerBlock>>> (
+        initTensor<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
+            d_pxx, d_pyy, d_pzz, 
+            d_pxy, d_pxz, d_pyz,
+            d_rho, nx, ny, nz
+        );
+
+        initPhase<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
             d_phi, nx, ny, nz
         ); 
-        getLastCudaError("Erro ao lançar initPhase");
-        checkCudaErrors(cudaDeviceSynchronize());
 
-        initDist<<<numBlocks, threadsPerBlock>>> (
+        initDist<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
             d_rho, d_phi, d_f, d_g, nx, ny, nz
         ); 
-        getLastCudaError("Erro ao lançar initDist");
-        checkCudaErrors(cudaDeviceSynchronize());
 
     // ========================================= //
 
@@ -75,18 +80,16 @@ int main(int argc, char* argv[]) {
     vector<dfloat> uy_host(nx * ny * nz);
     vector<dfloat> uz_host(nx * ny * nz);
 
-    for (int t = 0; t <= nsteps; ++t) {
+    for (int t = 0; t <= nsteps ; ++t) {
         cout << "Passo " << t << " de " << nsteps << " iniciado..." << endl;
 
 
 
         // ================= PHASE FIELD ================= //
 
-            phiCalc<<<numBlocks, threadsPerBlock>>> (
+            phiCalc<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
                 d_phi, d_g, nx, ny, nz
             ); 
-            getLastCudaError("Erro ao lançar phiCalc");
-            checkCudaErrors(cudaDeviceSynchronize());
 
         // =============================================== // 
         
@@ -94,13 +97,11 @@ int main(int argc, char* argv[]) {
 
         // ===================== NORMALS ===================== //
 
-            gradCalc<<<numBlocks, threadsPerBlock>>> (
-                d_phi, d_mod_grad, d_normx, d_normy, d_normz, 
+            gradCalc<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
+                d_phi, d_normx, d_normy, d_normz, 
                 d_indicator, 
                 nx, ny, nz
             ); 
-            getLastCudaError("Erro ao lançar gradCalc");
-            checkCudaErrors(cudaDeviceSynchronize());
 
         // =================================================== // 
 
@@ -108,14 +109,12 @@ int main(int argc, char* argv[]) {
 
         // ==================== CURVATURE ==================== //
 
-            curvatureCalc<<<numBlocks, threadsPerBlock>>> (
+            curvatureCalc<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
                 d_curvature, d_indicator,
                 d_normx, d_normy, d_normz, 
                 d_ffx, d_ffy, d_ffz,
                 nx, ny, nz
             ); 
-            getLastCudaError("Erro ao lançar curvatureCalc");
-            checkCudaErrors(cudaDeviceSynchronize());
 
         // =================================================== //   
 
@@ -123,52 +122,39 @@ int main(int argc, char* argv[]) {
         
         // ===================== MOMENTI ===================== //
 
-            momentiCalc<<<numBlocks, threadsPerBlock>>> (
+            momentiCalc<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
                 d_ux, d_uy, d_uz, d_rho,
                 d_ffx, d_ffy, d_ffz, d_f,
                 d_pxx, d_pyy, d_pzz,
                 d_pxy, d_pxz, d_pyz,
                 nx, ny, nz
             ); 
-            getLastCudaError("Erro ao lançar momentiCalc");
-            checkCudaErrors(cudaDeviceSynchronize());
 
         // ================================================== //   
 
+        
 
-
-        // ==================== COLLISION ==================== //
-
-            collisionCalc<<<numBlocks, threadsPerBlock>>> (
+        // ==================== COLLISION & STREAMING ==================== //
+            
+            collisionCalc<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
                 d_ux, d_uy, d_uz, 
                 d_normx, d_normy, d_normz,
                 d_ffx, d_ffy, d_ffz,
                 d_rho, d_phi, d_g, 
                 d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, 
-                nx, ny, nz, d_f_coll
+                nx, ny, nz, d_f
             ); 
-            getLastCudaError("Erro ao lançar collisionCalc");
-            checkCudaErrors(cudaDeviceSynchronize());
-            
-            streamingColl<<<numBlocks, threadsPerBlock>>> (
-                d_f, d_f_coll, 
-                nx, ny, nz
-            ); 
-            getLastCudaError("Erro ao lançar streamingCalcNew");
-            checkCudaErrors(cudaDeviceSynchronize());
 
-        // ================================================== //    
+        // =============================================================== //    
 
 
 
         // =================== STREAMING =================== //
 
-            streamingCalc<<<numBlocks, threadsPerBlock>>> (
+            streamingCalc<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
                 d_g, d_g_out, 
                 nx, ny, nz
             ); 
-            getLastCudaError("Erro ao lançar streamingCalc");
-            checkCudaErrors(cudaDeviceSynchronize());
             cudaMemcpy(d_g, d_g_out, nx * ny * nz * GPOINTS * sizeof(dfloat), cudaMemcpyDeviceToDevice);
 
         // ================================================= //
@@ -177,47 +163,25 @@ int main(int argc, char* argv[]) {
 
         // ========================================== DISTRIBUTION ========================================== //
 
-            fgBoundary_f<<<numBlocks, threadsPerBlock>>> (
+            fgBoundary<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
                 d_f, d_rho,
-                nx, ny, nz
-            ); 
-            getLastCudaError("Erro ao lançar fgBoundary_f");
-            checkCudaErrors(cudaDeviceSynchronize());
-
-            fgBoundary_g<<<numBlocks, threadsPerBlock>>> (
                 d_g, d_phi,
                 nx, ny, nz
             ); 
-            getLastCudaError("Erro ao lançar fgBoundary_g");
-            checkCudaErrors(cudaDeviceSynchronize());
 
         // ================================================================================================= //
 
-        
-        
+
+
         // ======================= BOUNDARY ======================= //
 
-            boundaryConditionsZ<<<numBlocks, threadsPerBlock>>> (
+            boundaryConditions<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
                 d_phi, nx, ny, nz
             ); 
-            getLastCudaError("Erro ao lançar boundaryConditionsZ");
-            checkCudaErrors(cudaDeviceSynchronize());
-
-            boundaryConditionsY<<<numBlocks, threadsPerBlock>>> (
-                d_phi, nx, ny, nz
-            ); 
-            getLastCudaError("Erro ao lançar boundaryConditionsZ");
-            checkCudaErrors(cudaDeviceSynchronize());
-
-            boundaryConditionsX<<<numBlocks, threadsPerBlock>>> (
-                d_phi, nx, ny, nz
-            ); 
-            getLastCudaError("Erro ao lançar boundaryConditionsZ");
-            checkCudaErrors(cudaDeviceSynchronize());
 
         // ======================================================== //
 
-
+        cudaDeviceSynchronize();
 
         if (t % stamp == 0) {
 
@@ -230,12 +194,14 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    cudaStreamDestroy(mainStream);
+
     dfloat *pointers[] = {d_f, d_g, d_phi, d_rho, 
-                          d_mod_grad, d_normx, d_normy, d_normz, d_indicator,
+                          d_normx, d_normy, d_normz, d_indicator,
                           d_curvature, d_ffx, d_ffy, d_ffz, d_ux, d_uy, d_uz,
-                          d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, d_f_coll, d_g_out
+                          d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, d_g_out
                         };
-    freeMemory(pointers, 24);  
+    freeMemory(pointers, 22);  
 
     auto end_time = chrono::high_resolution_clock::now();
     chrono::duration<double> elapsed_time = end_time - start_time;

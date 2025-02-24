@@ -1,9 +1,13 @@
-// precision.cuh
 #ifndef PRECISION_CUH
 #define PRECISION_CUH
 
 using namespace std;
+
+// precision
 #define SINGLE_PRECISION
+
+// index order
+#define ROW_MAJOR
 
 #ifdef SINGLE_PRECISION
     typedef float dfloat;      // single precision
@@ -26,4 +30,4 @@ using namespace std;
     #define GPOINTS 19
 #endif
 
-#endif // PRECISION_CUH
+#endif

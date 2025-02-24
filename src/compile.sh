@@ -15,7 +15,7 @@ mkdir -p ${OUTPUT_DIR}
 
 echo "Compilando para ${OUTPUT_DIR}/${EXECUTABLE_NAME}..."
 
-nvcc -gencode arch=compute_${CC},code=sm_${CC} -rdc=true -O3 --restrict \
+nvcc -gencode arch=compute_${CC},code=sm_${CC} -rdc=true --ptxas-options=-v --restrict \
     ${SRC_DIR}/*.cu \
     -lcudadevrt -lcurand -D${FLUID_MODEL} -D${PHASE_MODEL} \
     -o ${OUTPUT_DIR}/${EXECUTABLE_NAME}

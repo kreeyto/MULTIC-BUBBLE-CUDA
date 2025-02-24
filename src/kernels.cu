@@ -4,10 +4,61 @@
 
 #include "precision.cuh"
 
-#define IDX3D(i,j,k) ((i) + (j) * nx + (k) * nx * ny)
-#define IDX4D(i,j,k,l) ((i) + (j) * nx + (k) * nx * ny + (l) * nx * ny * nz)
+#define RHO_BEFORE
+
+#ifdef ROW_MAJOR
+
+    #define IDX3D(i,j,k) ((i) + (j) * nx + (k) * nx * ny)
+    #define IDX4D(i,j,k,l) ((i) + (j) * nx + (k) * nx * ny + (l) * nx * ny * nz)
+    __device__ __forceinline__ int inline3D(int i, int j, int k, int nx, int ny) {
+        return i + j * nx + k * nx * ny;
+    }
+    __device__ __forceinline__ int inline4D(int i, int j, int k, int l, int nx, int ny, int nz) {
+        return inline3D(i,j,k,nx,ny) + l * nx * ny * nz;
+    }
+
+#elif defined(COLUMN_MAJOR)
+
+    #define IDX3D(i,j,k) ((j) + (i) * ny + (k) * nx * ny)
+    #define IDX4D(i,j,k,l) ((j) + (i) * ny + (k) * nx * ny + (l) * nx * ny * nz)
+    __device__ __forceinline__ int inline3D(int i, int j, int k, int nx, int ny) {
+        return j + i * ny + k * nx * ny;
+    }
+    __device__ __forceinline__ int inline4D(int i, int j, int k, int l, int nx, int ny, int nz) {
+        return l * nx * ny * nz + inline3D(i,j,k,nx,ny);
+    }
+
+#endif
 
 // ============================================================================================== //
+
+__global__ void initTensor(
+    dfloat * __restrict__ pxx,
+    dfloat * __restrict__ pyy,
+    dfloat * __restrict__ pzz,
+    dfloat * __restrict__ pxy,
+    dfloat * __restrict__ pxz,
+    dfloat * __restrict__ pyz,
+    dfloat * __restrict__ rho,
+    int nx, int ny, int nz
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    int k = blockIdx.z * blockDim.z + threadIdx.z;
+
+    if (i >= nx || j >= ny || k >= nz) return;
+
+    int idx3D = inline3D(i,j,k,nx,ny);
+
+    dfloat val = 1.0;
+    pxx[idx3D] = val;
+    pyy[idx3D] = val;
+    pzz[idx3D] = val;
+    pxy[idx3D] = val;
+    pxz[idx3D] = val;
+    pyz[idx3D] = val;
+    rho[idx3D] = val;
+}
 
 __global__ void initPhase(
     dfloat * __restrict__ phi, 
@@ -20,7 +71,7 @@ __global__ void initPhase(
     if (i >= nx || j >= ny || k >= nz) return;
     if (i == 0 || i == nx-1 || j == 0 || j == ny-1 || k == 0 || k == nz-1) return;
 
-    int idx3D = i + j * nx + k * nx * ny;
+    int idx3D = inline3D(i,j,k,nx,ny);
 
     dfloat bubble_radius = 20.0 * nx / 150.0;
 
@@ -53,25 +104,25 @@ __global__ void initDist(
 
     if (i >= nx || j >= ny || k >= nz) return;
 
-    int idx3D = i + j * nx + k * nx * ny;
+    int idx3D = inline3D(i,j,k,nx,ny);
 
     dfloat rho_val = rho[idx3D];
     dfloat phi_val = phi[idx3D];
 
     for (int l = 0; l < FPOINTS; ++l) {
-        int idx4D = idx3D + l * nx * ny * nz;
-        f[idx4D] = W[l] * rho_val;
+        int idx4D = inline4D(i,j,k,l,nx,ny,nz);
+        f[idx4D] = (W[l] * rho_val) - W[l];
     }
 
     for (int l = 0; l < GPOINTS; ++l) {
-        int idx4D = idx3D + l * nx * ny * nz;
+        int idx4D = inline4D(i,j,k,l,nx,ny,nz);
         g[idx4D] = W_G[l] * phi_val;
     }
 }
 
 // =================================================================================================== //
 
-
+// THE KERNELS BELOW ARE CALLED ON A LOOP
 
 // ============================================================================================== //
 
@@ -87,11 +138,11 @@ __global__ void phiCalc(
     if (i >= nx || j >= ny || k >= nz) return;
     if (i == 0 || i == nx-1 || j == 0 || j == ny-1 || k == 0 || k == nz-1) return;
 
-    int idx3D = i + j * nx + k * nx * ny;
+    int idx3D = inline3D(i,j,k,nx,ny);
 
     dfloat sum = 0.0;       
     for (int l = 0; l < GPOINTS; ++l) {
-        int idx4D = idx3D + l * nx * ny * nz;
+        int idx4D = inline4D(i,j,k,l,nx,ny,nz);
         sum += g[idx4D];
     }
 
@@ -106,7 +157,6 @@ __global__ void phiCalc(
 
 __global__ void gradCalc(
     const dfloat * __restrict__ phi,
-    dfloat * __restrict__ mod_grad,
     dfloat * __restrict__ normx,
     dfloat * __restrict__ normy,
     dfloat * __restrict__ normz,
@@ -120,14 +170,15 @@ __global__ void gradCalc(
     if (i >= nx || j >= ny || k >= nz) return;
     if (i == 0 || i == nx-1 || j == 0 || j == ny-1 || k == 0 || k == nz-1) return;
 
-    int idx3D = i + j * nx + k * nx * ny;
+    int idx3D = inline3D(i,j,k,nx,ny);
 
     dfloat grad_fix = 0.0, grad_fiy = 0.0, grad_fiz = 0.0;
     for (int l = 0; l < FPOINTS; ++l) {
         int ii = i + CIX[l];
         int jj = j + CIY[l];
         int kk = k + CIZ[l];
-        int offset = ii + jj * nx + kk * nx * ny;
+
+        int offset = inline3D(ii,jj,kk,nx,ny);
         dfloat val = phi[offset];
         dfloat coef = 3.0 * W[l];
         grad_fix += coef * CIX[l] * val;
@@ -136,14 +187,12 @@ __global__ void gradCalc(
     }
 
     dfloat gmag_sq = grad_fix * grad_fix + grad_fiy * grad_fiy + grad_fiz * grad_fiz;
-    dfloat gmag = sqrt(gmag_sq);
+    dfloat factor = rsqrtf(fmaxf(gmag_sq, 1e-9));
 
-    mod_grad[idx3D] = gmag;
-    dfloat factor = 1.0 / (gmag + 1e-9);  
     normx[idx3D] = grad_fix * factor;
     normy[idx3D] = grad_fiy * factor;
     normz[idx3D] = grad_fiz * factor;
-    indicator[idx3D] = gmag;
+    indicator[idx3D] = gmag_sq * factor;  
 }
 
 // =================================================================================================== //
@@ -170,7 +219,7 @@ __global__ void curvatureCalc(
     if (i >= nx || j >= ny || k >= nz) return;
     if (i == 0 || i == nx-1 || j == 0 || j == ny-1 || k == 0 || k == nz-1) return;
 
-    int idx3D = i + j * nx + k * nx * ny;
+    int idx3D = inline3D(i,j,k,nx,ny);
 
     dfloat normx_ = normx[idx3D];
     dfloat normy_ = normy[idx3D];
@@ -182,7 +231,8 @@ __global__ void curvatureCalc(
         int ii = i + CIX[l];
         int jj = j + CIY[l];
         int kk = k + CIZ[l];
-        int offset = ii + jj * nx + kk * nx * ny;
+
+        int offset = inline3D(ii,jj,kk,nx,ny);
         dfloat normxN = normx[offset];
         dfloat normyN = normy[offset];
         dfloat normzN = normz[offset];
@@ -228,66 +278,62 @@ __global__ void momentiCalc(
     if (i >= nx || j >= ny || k >= nz) return;
     if (i == 0 || i == nx-1 || j == 0 || j == ny-1 || k == 0 || k == nz-1) return;
 
-    int idx3D = i + j * nx + k * nx * ny;
+    int idx3D = inline3D(i,j,k,nx,ny);
     
     dfloat fneq[FPOINTS];
     dfloat fVal[FPOINTS];
 
     for (int l = 0; l < FPOINTS; ++l) {
-        int idx4D = idx3D + l * nx * ny * nz;
+        int idx4D = inline4D(i,j,k,l,nx,ny,nz);
         fVal[l] = f[idx4D];
     }
-    
-    dfloat rhoOld = rho[idx3D];
+
+    #ifdef RHO_BEFORE
+
+        dfloat rhoVal = 0.0;
+        dfloat rhoShift = 0.0;
+        for (int l = 0; l < FPOINTS; ++l)
+            rhoShift += fVal[l];
+        rhoVal = rhoShift + 1.0;
+
+        dfloat invRho = 1.0 / rhoVal;
+
+        dfloat sumUx = invRho * (fVal[1] - fVal[2] + fVal[7] - fVal[8] + fVal[9] - fVal[10] + fVal[13] - fVal[14] + fVal[15] - fVal[16]);
+        dfloat sumUy = invRho * (fVal[3] - fVal[4] + fVal[7] - fVal[8] + fVal[11] - fVal[12] + fVal[14] - fVal[13] + fVal[17] - fVal[18]);
+        dfloat sumUz = invRho * (fVal[5] - fVal[6] + fVal[9] - fVal[10] + fVal[11] - fVal[12] + fVal[16] - fVal[15] + fVal[18] - fVal[17]);
+
+    #elif defined(RHO_AFTER)
+
+        dfloat rhoOld = rho[idx3D];
+        dfloat invRhoOld = 1.0 / rhoOld;
+
+        dfloat sumUx = invRhoOld * (fVal[1] - fVal[2] + fVal[7] - fVal[8] + fVal[9] - fVal[10] + fVal[13] - fVal[14] + fVal[15] - fVal[16]);
+        dfloat sumUy = invRhoOld * (fVal[3] - fVal[4] + fVal[7] - fVal[8] + fVal[11] - fVal[12] + fVal[14] - fVal[13] + fVal[17] - fVal[18]);
+        dfloat sumUz = invRhoOld * (fVal[5] - fVal[6] + fVal[9] - fVal[10] + fVal[11] - fVal[12] + fVal[16] - fVal[15] + fVal[18] - fVal[17]);
+
+        dfloat rhoVal = 0.0;
+        dfloat rhoShift = 0.0;
+        for (int l = 0; l < FPOINTS; ++l)
+            rhoShift += fVal[l];
+        rhoVal = rhoShift + 1.0;
+
+    #endif
+
     dfloat ffx_val = ffx[idx3D];
     dfloat ffy_val = ffy[idx3D];
     dfloat ffz_val = ffz[idx3D];
 
-    #ifdef FD3Q19
-        dfloat sumUx = fVal[1] - fVal[2] + fVal[7] - fVal[8] +
-                       fVal[9] - fVal[10] + fVal[13] - fVal[14] +
-                       fVal[15] - fVal[16];
-        dfloat sumUy = fVal[3] - fVal[4] + fVal[7] - fVal[8] +
-                       fVal[11] - fVal[12] - fVal[13] + fVal[14] +
-                       fVal[17] - fVal[18];
-        dfloat sumUz = fVal[5] - fVal[6] + fVal[9] - fVal[10] +
-                       fVal[11] - fVal[12] - fVal[15] + fVal[16] -
-                       fVal[17] + fVal[18];
-    #elif defined(FD3Q27)
-        dfloat sumUx = fVal[1] - fVal[2] + fVal[7] - fVal[8] + fVal[9] - 
-                       fVal[10] + fVal[13] - fVal[14] + fVal[15] - 
-                       fVal[16] + fVal[19] - fVal[20] + fVal[21] - 
-                       fVal[22] + fVal[23] - fVal[24] - fVal[25] + 
-                       fVal[26];
-        dfloat sumUy = fVal[3] - fVal[4] + fVal[7] - fVal[8] + fVal[11] - 
-                       fVal[12] - fVal[13] + fVal[14] + fVal[17] - 
-                       fVal[18] + fVal[19] - fVal[20] + fVal[21] - 
-                       fVal[22] - fVal[23] + fVal[24] + fVal[25] - 
-                       fVal[26];
-        dfloat sumUz = fVal[5] - fVal[6] + fVal[9] - fVal[10] + fVal[11] - 
-                       fVal[12] - fVal[15] + fVal[16] - fVal[17] + 
-                       fVal[18] + fVal[19] - fVal[20] - fVal[21] + 
-                       fVal[22] + fVal[23] - fVal[24] + fVal[25] - 
-                       fVal[26];
-    #endif
+    dfloat halfFx = ffx_val * 0.5;
+    dfloat halfFy = ffy_val * 0.5;
+    dfloat halfFz = ffz_val * 0.5;
 
-    dfloat invRhoOld = 1.0 / rhoOld;
-    dfloat halfFx = ffx_val * 0.5 * invRhoOld;
-    dfloat halfFy = ffy_val * 0.5 * invRhoOld;
-    dfloat halfFz = ffz_val * 0.5 * invRhoOld;
-
-    dfloat uxVal = sumUx * invRhoOld + halfFx;
-    dfloat uyVal = sumUy * invRhoOld + halfFy;
-    dfloat uzVal = sumUz * invRhoOld + halfFz;
-
-    dfloat rhoNew = 0.0;
-    for (int l = 0; l < FPOINTS; ++l)
-        rhoNew += fVal[l];
-    rho[idx3D] = rhoNew;
+    dfloat uxVal = sumUx + halfFx;
+    dfloat uyVal = sumUy + halfFy;
+    dfloat uzVal = sumUz + halfFz;
 
     dfloat invCssq = 1.0 / CSSQ;
     dfloat uu = 0.5 * (uxVal * uxVal + uyVal * uyVal + uzVal * uzVal) * invCssq;
-    dfloat invRhoNewCssq = 1.0 / (rhoNew * CSSQ);
+    dfloat invRhoCssq = 1.0 / (rhoVal * CSSQ);
 
     dfloat sumXX = 0.0, sumYY = 0.0, sumZZ = 0.0;
     dfloat sumXY = 0.0, sumXZ = 0.0, sumYZ = 0.0;
@@ -295,62 +341,28 @@ __global__ void momentiCalc(
     for (int l = 0; l < FPOINTS; ++l) {
         dfloat udotc = (uxVal * CIX[l] + uyVal * CIY[l] + uzVal * CIZ[l]) * invCssq;
         dfloat udotc2 = udotc * udotc;
-        dfloat eqBase = rhoNew * (udotc + 0.5 * udotc2 - uu);
-        dfloat common = W[l] * (rhoNew + eqBase);
+        dfloat eqBase = rhoVal * (udotc + 0.5 * udotc2 - uu);
+        dfloat common = W[l] * (rhoVal + eqBase);
         dfloat HeF = common * ((CIX[l] - uxVal) * ffx_val +
                                (CIY[l] - uyVal) * ffy_val +
-                               (CIZ[l] - uzVal) * ffz_val) * invRhoNewCssq;
+                               (CIZ[l] - uzVal) * ffz_val) * invRhoCssq;
         dfloat feq = common - 0.5 * HeF; 
-        fneq[l] = fVal[l] - feq;
+        dfloat feq_shifted = feq - W[l];
+        fneq[l] = fVal[l] - feq_shifted;
     }
 
-    #ifdef FD3Q19
-        sumXX = fneq[1] + fneq[2] + fneq[7] + fneq[8] +
-                fneq[9] + fneq[10] + fneq[13] + fneq[14] +
-                fneq[15] + fneq[16];
-        sumYY = fneq[3] + fneq[4] + fneq[7] + fneq[8] +
-                fneq[11] + fneq[12] + fneq[13] + fneq[14] +
-                fneq[17] + fneq[18];
-        sumZZ = fneq[5] + fneq[6] + fneq[9] + fneq[10] +
-                fneq[11] + fneq[12] + fneq[15] + fneq[16] +
-                fneq[17] + fneq[18];
-        sumXY = fneq[7] + fneq[8] - fneq[13] - fneq[14];
-        sumXZ = fneq[9] + fneq[10] - fneq[15] - fneq[16];
-        sumYZ = fneq[11] + fneq[12] - fneq[17] - fneq[18];
-    #elif defined(FD3Q27)
-        sumXX = fneq[1] + fneq[2] + fneq[7] + fneq[8] + fneq[9] + 
-                fneq[10] + fneq[13] + fneq[14] + fneq[15] + fneq[16] + 
-                fneq[19] + fneq[20] + fneq[21] + fneq[22] + fneq[23] + 
-                fneq[24] + fneq[25] + fneq[26];
-        sumYY = fneq[3] + fneq[4] + fneq[7] + fneq[8] + fneq[11] + 
-                fneq[12] + fneq[13] + fneq[14] + fneq[17] + fneq[18] + 
-                fneq[19] + fneq[20] + fneq[21] + fneq[22] + fneq[23] + 
-                fneq[24] + fneq[25] + fneq[26];
-        sumZZ = fneq[5] + fneq[6] + fneq[9] + fneq[10] + fneq[11] + 
-                fneq[12] + fneq[13] + fneq[14] + fneq[17] + fneq[18] + 
-                fneq[19] + fneq[20] + fneq[21] + fneq[22] + fneq[23] + 
-                fneq[24] + fneq[25] + fneq[26];
-        sumXY = fneq[7] + fneq[8] + fneq[19] + fneq[20] + fneq[21] + 
-                fneq[22] - fneq[13] - fneq[14] - fneq[23] - fneq[24] - 
-                fneq[25] - fneq[26];
-        sumXZ = fneq[9] + fneq[10] + fneq[19] + fneq[20] + fneq[23] + 
-                fneq[24] - fneq[15] - fneq[16] - fneq[21] - fneq[22] - 
-                fneq[25] - fneq[26];
-        sumYZ = fneq[11] + fneq[12] + fneq[19] + fneq[20] + fneq[25] + 
-                fneq[26] - fneq[17] - fneq[18] - fneq[21] - fneq[22] - 
-                fneq[23] - fneq[24];
-    #endif
+    sumXX = fneq[1] + fneq[2] + fneq[7] + fneq[8] + fneq[9] + fneq[10] + fneq[13] + fneq[14] + fneq[15] + fneq[16];
+    sumYY = fneq[3] + fneq[4] + fneq[7] + fneq[8] + fneq[11] + fneq[12] + fneq[13] + fneq[14] + fneq[17] + fneq[18];
+    sumZZ = fneq[5] + fneq[6] + fneq[9] + fneq[10] + fneq[11] + fneq[12] + fneq[15] + fneq[16] + fneq[17] + fneq[18];
+    sumXY = fneq[7] - fneq[13] + fneq[8] - fneq[14];
+    sumXZ = fneq[9] - fneq[15] + fneq[10] - fneq[16];
+    sumYZ = fneq[11] - fneq[17] + fneq[12] - fneq[18];
 
-    pxx[idx3D] = sumXX;
-    pyy[idx3D] = sumYY;
-    pzz[idx3D] = sumZZ;
-    pxy[idx3D] = sumXY;
-    pxz[idx3D] = sumXZ;
-    pyz[idx3D] = sumYZ;
+    pxx[idx3D] = sumXX; pyy[idx3D] = sumYY; pzz[idx3D] = sumZZ;
+    pxy[idx3D] = sumXY; pxz[idx3D] = sumXZ; pyz[idx3D] = sumYZ;
 
-    ux[idx3D] = uxVal;
-    uy[idx3D] = uyVal;
-    uz[idx3D] = uzVal;
+    ux[idx3D] = uxVal; uy[idx3D] = uyVal; uz[idx3D] = uzVal;
+    rho[idx3D] = rhoVal;
 }
 
 // =================================================================================================== //
@@ -379,7 +391,7 @@ __global__ void collisionCalc(
     const dfloat * __restrict__ pxz,
     const dfloat * __restrict__ pyz,
     int nx, int ny, int nz,
-    dfloat * __restrict__ f_coll
+    dfloat * __restrict__ f
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -388,8 +400,7 @@ __global__ void collisionCalc(
     if (i >= nx || j >= ny || k >= nz) return;
     if (i == 0 || i == nx-1 || j == 0 || j == ny-1 || k == 0 || k == nz-1) return;
 
-    int idx3D = i + j * nx + k * nx * ny;
-    int nxyz  = nx * ny * nz;
+    int idx3D = inline3D(i,j,k,nx,ny);
 
     dfloat ux_val = ux[idx3D], uy_val = uy[idx3D], uz_val = uz[idx3D];
     dfloat rho_val = rho[idx3D], phi_val = phi[idx3D];
@@ -405,31 +416,38 @@ __global__ void collisionCalc(
     dfloat invCSSQ = 1.0 / CSSQ;
 
     for (int l = 0; l < FPOINTS; ++l) {
+        int ii = i + CIX[l];
+        int jj = j + CIY[l];
+        int kk = k + CIZ[l];
+
+        int offset = inline4D(ii,jj,kk,l,nx,ny,nz);
         dfloat udotc = (ux_val * CIX[l] + uy_val * CIY[l] + uz_val * CIZ[l]) * invCSSQ;
-        dfloat udotc2 = udotc * udotc;
-        dfloat feq = W[l] * (rho_val + rho_val * (udotc + 0.5 * udotc2 - uu));
-        dfloat HeF = 0.5 * feq * ( (CIX[l] - ux_val) * ffx_val +
-                                   (CIY[l] - uy_val) * ffy_val +
-                                   (CIZ[l] - uz_val) * ffz_val ) * inv_rho_CSSQ;
+        dfloat feq = W[l] * (rho_val + rho_val * (udotc + 0.5 * udotc*udotc - uu));
+        dfloat feq_shifted = feq - W[l];
+        dfloat HeF = 0.5 * feq_shifted * ( (CIX[l] - ux_val) * ffx_val +
+                                (CIY[l] - uy_val) * ffy_val +
+                                (CIZ[l] - uz_val) * ffz_val ) * inv_rho_CSSQ;
         dfloat fneq = (W[l] / (2.0 * CSSQ * CSSQ)) * ((CIX[l]*CIX[l] - CSSQ) * pxx_val +
-                                                      (CIY[l]*CIY[l] - CSSQ) * pyy_val +
-                                                      (CIZ[l]*CIZ[l] - CSSQ) * pzz_val +
-                                                       2.0 * CIX[l] * CIY[l] * pxy_val +
-                                                       2.0 * CIX[l] * CIZ[l] * pxz_val +
-                                                       2.0 * CIY[l] * CIZ[l] * pyz_val
-                                                     );
-        f_coll[idx3D + l * nxyz] = feq + omc * fneq + HeF; 
+                                                    (CIY[l]*CIY[l] - CSSQ) * pyy_val +
+                                                    (CIZ[l]*CIZ[l] - CSSQ) * pzz_val +
+                                                    2.0 * CIX[l] * CIY[l] * pxy_val +
+                                                    2.0 * CIX[l] * CIZ[l] * pxz_val +
+                                                    2.0 * CIY[l] * CIZ[l] * pyz_val
+                                                    );
+        f[offset] = feq_shifted + omc * fneq + HeF; 
     }
 
+    dfloat phi_norm = SHARP_C * phi_val * (1.0 - phi_val);
     for (int l = 0; l < GPOINTS; ++l) {
+        int idx4D = inline4D(i,j,k,l,nx,ny,nz);
         dfloat udotc = (ux_val * CIX[l] + uy_val * CIY[l] + uz_val * CIZ[l]) * invCSSQ;
         dfloat geq = W_G[l] * phi_val * (1.0 + udotc);
-        dfloat Hi = W_G[l] * SHARP_C * phi_val * (1.0 - phi_val) *
-                    (CIX[l] * normx_val + CIY[l] * normy_val + CIZ[l] * normz_val);
-        g[idx3D + l * nxyz] = geq + Hi;
+        dfloat Hi = W_G[l] * phi_norm * (CIX[l] * normx_val + CIY[l] * normy_val + CIZ[l] * normz_val);
+        g[idx4D] = geq + Hi;
     }
 }
 
+/* IN CASE OF NON FUSED COLLISION+STREAMING
 __global__ void streamingColl(
     dfloat * __restrict__ f,
     const dfloat * __restrict__ f_coll,
@@ -442,22 +460,18 @@ __global__ void streamingColl(
     if (i >= nx || j >= ny || k >= nz) return;
     if (i == 0 || i == nx-1 || j == 0 || j == ny-1 || k == 0 || k == nz-1) return;
 
-    int NxNy = nx * ny;
-    int NxNyNz = NxNy * nz;
-    int srcBase = i + j * nx + k * NxNy;
-
     for (int l = 0; l < FPOINTS; ++l) {
         int dst_i = i + CIX[l]; 
         int dst_j = j + CIY[l];
         int dst_k = k + CIZ[l];
         if (dst_i >= 0 && dst_i < nx && dst_j >= 0 && dst_j < ny && dst_k >= 0 && dst_k < nz) {
-            int dstBase = dst_i + dst_j * nx + dst_k * NxNy;
-            int srcIdx = l * NxNyNz + srcBase;
-            int dstIdx = l * NxNyNz + dstBase;
+            int srcIdx = inline4D(i,j,k,l,nx,ny,nz);
+            int dstIdx = inline4D(dst_i,dst_j,dst_k,l,nx,ny,nz);
             f[dstIdx] = f_coll[srcIdx];  
         }
     }
 }
+*/
 
 // =================================================================================================== //
 
@@ -476,17 +490,12 @@ __global__ void streamingCalc(
 
     if (i >= nx || j >= ny || k >= nz) return;
 
-    int NxNy = nx * ny;
-    int NxNyNz = NxNy * nz;
-    int dstBase = i + j * nx + k * NxNy;
-
     for (int l = 0; l < GPOINTS; ++l) {
         int src_i = (i - CIX[l] + nx) & (nx-1);
         int src_j = (j - CIY[l] + ny) & (ny-1);
         int src_k = (k - CIZ[l] + nz) & (nz-1);
-        int srcBase = src_i + src_j * nx + src_k * NxNy;
-        int dstIdx = l * NxNyNz + dstBase;
-        int srcIdx = l * NxNyNz + srcBase;
+        int dstIdx = inline4D(i,j,k,l,nx,ny,nz);
+        int srcIdx = inline4D(src_i,src_j,src_k,l,nx,ny,nz);
         g_out[dstIdx] = g[srcIdx];
     }
 }
@@ -497,30 +506,9 @@ __global__ void streamingCalc(
 
 // =================================================================================================== //
 
-__global__ void fgBoundary_f(
+__global__ void fgBoundary(
     dfloat * __restrict__ f,
     const dfloat * __restrict__ rho,
-    int nx, int ny, int nz
-) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
-    int k = blockIdx.z * blockDim.z + threadIdx.z;
-
-    if (i >= nx || j >= ny || k >= nz) return;
-
-    if (i == 0 || i == nx - 1 || j == 0 || j == ny - 1 || k == 0 || k == nz - 1) {
-        for (int l = 0; l < FPOINTS; ++l) {
-            int ni = i + CIX[l];
-            int nj = j + CIY[l];
-            int nk = k + CIZ[l];
-            if (ni >= 0 && ni < nx && nj >= 0 && nj < ny && nk >= 0 && nk < nz) {
-                f[IDX4D(ni,nj,nk,l)] = rho[IDX3D(i,j,k)] * W[l];
-            }
-        }
-    }
-}
-
-__global__ void fgBoundary_g(
     dfloat * __restrict__ g,
     const dfloat * __restrict__ phi,
     int nx, int ny, int nz
@@ -531,53 +519,54 @@ __global__ void fgBoundary_g(
 
     if (i >= nx || j >= ny || k >= nz) return;
 
+    int idx3D = inline3D(i,j,k,nx,ny);
+
     if (i == 0 || i == nx - 1 || j == 0 || j == ny - 1 || k == 0 || k == nz - 1) {
+        for (int l = 0; l < FPOINTS; ++l) {
+            int ni = i + CIX[l];
+            int nj = j + CIY[l];
+            int nk = k + CIZ[l];
+            if (ni >= 0 && ni < nx && nj >= 0 && nj < ny && nk >= 0 && nk < nz) {
+                int idx4D = inline4D(ni,nj,nk,l,nx,ny,nz);
+                f[idx4D] = (rho[idx3D] - 1.0) * W[l];
+            }
+        }
         for (int l = 0; l < GPOINTS; ++l) {
             int ni = i + CIX[l];
             int nj = j + CIY[l];
             int nk = k + CIZ[l];
             if (ni >= 0 && ni < nx && nj >= 0 && nj < ny && nk >= 0 && nk < nz) {
-                g[IDX4D(ni,nj,nk,l)] = phi[IDX3D(i,j,k)] * W_G[l];
+                int idx4D = inline4D(ni,nj,nk,l,nx,ny,nz);
+                g[idx4D] = phi[idx3D] * W_G[l];
             }
         }
     }
 }
 
-__global__ void boundaryConditionsZ(
+__global__ void boundaryConditions(
     dfloat * __restrict__ phi,
     int nx, int ny, int nz
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
-    if(i < nx && j < ny) {
-         phi[IDX3D(i,j,0)] = phi[IDX3D(i,j,1)];
-         phi[IDX3D(i,j,nz-1)] = phi[IDX3D(i,j,nz-2)];
-    }
-}
+    int k = blockIdx.z * blockDim.z + threadIdx.z;
 
-__global__ void boundaryConditionsY(
-    dfloat * __restrict__ phi,
-    int nx, int ny, int nz
-) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int k = blockIdx.y * blockDim.y + threadIdx.y;
-    if(i < nx && k < nz) {
-         phi[IDX3D(i,0,k)] = phi[IDX3D(i,1,k)];
-         phi[IDX3D(i,ny-1,k)] = phi[IDX3D(i,ny-2,k)];
+    if (i < nx && j < ny) {
+        phi[IDX3D(i,j,0)] = phi[IDX3D(i,j,1)];
+        phi[IDX3D(i,j,nz-1)] = phi[IDX3D(i,j,nz-2)];
     }
-}
 
-__global__ void boundaryConditionsX(
-    dfloat * __restrict__ phi,
-    int nx, int ny, int nz
-) {
-    int j = blockIdx.x * blockDim.x + threadIdx.x;
-    int k = blockIdx.y * blockDim.y + threadIdx.y;
-    if(j < ny && k < nz) {
-         phi[IDX3D(0,j,k)] = phi[IDX3D(1,j,k)];
-         phi[IDX3D(nx-1,j,k)] = phi[IDX3D(nx-2,j,k)];
+    if (i < nx && k < nz) {
+        phi[IDX3D(i,0,k)] = phi[IDX3D(i,1,k)];
+        phi[IDX3D(i,ny-1,k)] = phi[IDX3D(i,ny-2,k)];
+    }
+
+    if (j < ny && k < nz) {
+        phi[IDX3D(0,j,k)] = phi[IDX3D(1,j,k)];
+        phi[IDX3D(nx-1,j,k)] = phi[IDX3D(nx-2,j,k)];
     }
 }
 
 
 // =================================================================================================== //
+

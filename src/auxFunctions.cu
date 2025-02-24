@@ -7,7 +7,6 @@
 #include <string>
 #include <cstdlib>
 #include <stdexcept>
-#include "errorDef.cuh"
 
 #include "precision.cuh"
 
@@ -62,7 +61,7 @@ void copyAndSaveToBinary(
 ) {
     vector<dfloat> host_data(size);
     
-    checkCudaErrors(cudaMemcpy(host_data.data(), d_data, size * sizeof(dfloat), cudaMemcpyDeviceToHost));
+    cudaMemcpy(host_data.data(), d_data, size * sizeof(dfloat), cudaMemcpyDeviceToHost);
     
     ostringstream filename;
     filename << sim_dir << id << "_" << var_name << setw(6) << setfill('0') << t << ".bin";

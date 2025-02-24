@@ -6,6 +6,17 @@
 
 #include "precision.cuh"
 
+__global__ void initTensor(
+    dfloat * __restrict__ pxx,
+    dfloat * __restrict__ pyy,
+    dfloat * __restrict__ pzz,
+    dfloat * __restrict__ pxy,
+    dfloat * __restrict__ pxz,
+    dfloat * __restrict__ pyz,
+    dfloat * __restrict__ rho,
+    int nx, int ny, int nz
+);
+
 __global__ void initPhase(
     dfloat * __restrict__ phi, 
     int nx, int ny, int nz
@@ -29,7 +40,6 @@ __global__ void phiCalc(
 
 __global__ void gradCalc(
     const dfloat * __restrict__ phi,
-    dfloat * __restrict__ mod_grad,
     dfloat * __restrict__ normx,
     dfloat * __restrict__ normy,
     dfloat * __restrict__ normz,
@@ -87,13 +97,7 @@ __global__ void collisionCalc(
     const dfloat * __restrict__ pxz,
     const dfloat * __restrict__ pyz,
     int nx, int ny, int nz,
-    dfloat * __restrict__ f_coll
-);
-
-__global__ void streamingColl(
-    dfloat * __restrict__ f,
-    const dfloat * __restrict__ f_coll,
-    int nx, int ny, int nz
+    dfloat * __restrict__ f
 );
 
 __global__ void streamingCalc(
@@ -102,29 +106,15 @@ __global__ void streamingCalc(
     int nx, int ny, int nz
 );
 
-__global__ void fgBoundary_f(
+__global__ void fgBoundary(
     dfloat * __restrict__ f,
     const dfloat * __restrict__ rho,
-    int nx, int ny, int nz
-);
-
-__global__ void fgBoundary_g(
     dfloat * __restrict__ g,
     const dfloat * __restrict__ phi,
     int nx, int ny, int nz
 );
 
-__global__ void boundaryConditionsZ(
-    dfloat * __restrict__ phi,
-    int nx, int ny, int nz
-);
-
-__global__ void boundaryConditionsY(
-    dfloat * __restrict__ phi,
-    int nx, int ny, int nz
-);
-
-__global__ void boundaryConditionsX(
+__global__ void boundaryConditions(
     dfloat * __restrict__ phi,
     int nx, int ny, int nz
 );
