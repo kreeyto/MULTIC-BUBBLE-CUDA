@@ -87,10 +87,6 @@ __global__ void initPhase(
 
 // =================================================================================================== //
 
-
-
-// =================================================================================================== //
-
 __global__ void initDist(
     const dfloat * __restrict__ rho, 
     const dfloat * __restrict__ phi, 
@@ -409,6 +405,12 @@ __global__ void collisionCalc(
     dfloat pxy_val = pxy[idx3D], pxz_val = pxz[idx3D], pyz_val = pyz[idx3D];
     dfloat normx_val = normx[idx3D], normy_val = normy[idx3D], normz_val = normz[idx3D];
 
+    dfloat gVal[GPOINTS];
+    for (int l = 0; l < GPOINTS; ++l) {
+        int idx4D = inline4D(i,j,k,l,nx,ny,nz);
+        gVal[l] = g[idx4D];
+    }
+
     dfloat u_sq = ux_val*ux_val + uy_val*uy_val + uz_val*uz_val;
     dfloat uu = 0.5 * u_sq / CSSQ;
     dfloat inv_rho_CSSQ = 1.0 / (rho_val * CSSQ);
@@ -428,11 +430,11 @@ __global__ void collisionCalc(
                                 (CIY[l] - uy_val) * ffy_val +
                                 (CIZ[l] - uz_val) * ffz_val ) * inv_rho_CSSQ;
         dfloat fneq = (W[l] / (2.0 * CSSQ * CSSQ)) * ((CIX[l]*CIX[l] - CSSQ) * pxx_val +
-                                                    (CIY[l]*CIY[l] - CSSQ) * pyy_val +
-                                                    (CIZ[l]*CIZ[l] - CSSQ) * pzz_val +
-                                                    2.0 * CIX[l] * CIY[l] * pxy_val +
-                                                    2.0 * CIX[l] * CIZ[l] * pxz_val +
-                                                    2.0 * CIY[l] * CIZ[l] * pyz_val
+                                                      (CIY[l]*CIY[l] - CSSQ) * pyy_val +
+                                                      (CIZ[l]*CIZ[l] - CSSQ) * pzz_val +
+                                                       2.0 * CIX[l] * CIY[l] * pxy_val +
+                                                       2.0 * CIX[l] * CIZ[l] * pxz_val +
+                                                       2.0 * CIY[l] * CIZ[l] * pyz_val
                                                     );
         f[offset] = feq_shifted + omc * fneq + HeF; 
     }
@@ -443,7 +445,7 @@ __global__ void collisionCalc(
         dfloat udotc = (ux_val * CIX[l] + uy_val * CIY[l] + uz_val * CIZ[l]) * invCSSQ;
         dfloat geq = W_G[l] * phi_val * (1.0 + udotc);
         dfloat Hi = W_G[l] * phi_norm * (CIX[l] * normx_val + CIY[l] * normy_val + CIZ[l] * normz_val);
-        g[idx4D] = geq + Hi;
+        g[idx4D] = geq + Hi; // + (1 - omega_d) * (g(i,j,k,l) - geq); <---- gneq
     }
 }
 
