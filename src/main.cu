@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     // ============================================================================================================================================================= //
 
     // ========================= //
-    int stamp = 100, nsteps = 1500;
+    int stamp = 100, nsteps = 5000;
     // ========================= //
     initializeVars();
 
@@ -150,7 +150,8 @@ int main(int argc, char* argv[]) {
 
 
         // =================== STREAMING =================== //
-
+            
+        
             streamingCalc<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
                 d_g, d_g_out, 
                 nx, ny, nz

@@ -405,12 +405,6 @@ __global__ void collisionCalc(
     dfloat pxy_val = pxy[idx3D], pxz_val = pxz[idx3D], pyz_val = pyz[idx3D];
     dfloat normx_val = normx[idx3D], normy_val = normy[idx3D], normz_val = normz[idx3D];
 
-    dfloat gVal[GPOINTS];
-    for (int l = 0; l < GPOINTS; ++l) {
-        int idx4D = inline4D(i,j,k,l,nx,ny,nz);
-        gVal[l] = g[idx4D];
-    }
-
     dfloat u_sq = ux_val*ux_val + uy_val*uy_val + uz_val*uz_val;
     dfloat uu = 0.5 * u_sq / CSSQ;
     dfloat inv_rho_CSSQ = 1.0 / (rho_val * CSSQ);
