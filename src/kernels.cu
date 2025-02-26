@@ -438,36 +438,11 @@ __global__ void collisionCalc(
         int idx4D = inline4D(i,j,k,l,nx,ny,nz);
         dfloat udotc = (ux_val * CIX[l] + uy_val * CIY[l] + uz_val * CIZ[l]) * invCSSQ;
         dfloat geq = W_G[l] * phi_val * (1.0 + udotc);
-        dfloat Hi = W_G[l] * phi_norm * (CIX[l] * normx_val + CIY[l] * normy_val + CIZ[l] * normz_val);
-        g[idx4D] = geq + Hi; // + (1 - omega_d) * (g(i,j,k,l) - geq); <---- gneq
+        dfloat Hi = phi_norm * (CIX[l] * normx_val + CIY[l] * normy_val + CIZ[l] * normz_val);
+        g[idx4D] = geq + W_G[l] * Hi; // + (1 - omega) * gneq;
+        // there is an option to stream g in collision as f is being done
     }
 }
-
-/* IN CASE OF NON FUSED COLLISION+STREAMING
-__global__ void streamingColl(
-    dfloat * __restrict__ f,
-    const dfloat * __restrict__ f_coll,
-    int nx, int ny, int nz
-) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
-    int k = blockIdx.z * blockDim.z + threadIdx.z;
-
-    if (i >= nx || j >= ny || k >= nz) return;
-    if (i == 0 || i == nx-1 || j == 0 || j == ny-1 || k == 0 || k == nz-1) return;
-
-    for (int l = 0; l < FPOINTS; ++l) {
-        int dst_i = i + CIX[l]; 
-        int dst_j = j + CIY[l];
-        int dst_k = k + CIZ[l];
-        if (dst_i >= 0 && dst_i < nx && dst_j >= 0 && dst_j < ny && dst_k >= 0 && dst_k < nz) {
-            int srcIdx = inline4D(i,j,k,l,nx,ny,nz);
-            int dstIdx = inline4D(dst_i,dst_j,dst_k,l,nx,ny,nz);
-            f[dstIdx] = f_coll[srcIdx];  
-        }
-    }
-}
-*/
 
 // =================================================================================================== //
 
@@ -517,7 +492,7 @@ __global__ void fgBoundary(
 
     int idx3D = inline3D(i,j,k,nx,ny);
 
-    if (i == 0 || i == nx - 1 || j == 0 || j == ny - 1 || k == 0 || k == nz - 1) {
+    if (i == 0 || i == nx-1 || j == 0 || j == ny-1 || k == 0 || k == nz-1) {
         for (int l = 0; l < FPOINTS; ++l) {
             int ni = i + CIX[l];
             int nj = j + CIY[l];

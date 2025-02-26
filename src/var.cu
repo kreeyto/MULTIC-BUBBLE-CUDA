@@ -58,13 +58,7 @@ dfloat h_sigma = 0.1;
 #endif
 
 // phase field weights
-#ifdef PD3Q15
-    dfloat h_w_g[15] = {
-        2.0 / 9.0, 
-        1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0,
-        1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0, 1.0 / 72.0
-    };
-#elif defined(PD3Q19)
+#ifdef PD3Q19
     dfloat h_w_g[19] = {
         1.0 / 3.0, 
         1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0,
@@ -102,7 +96,6 @@ void initializeVars() {
     cudaMalloc((void **)&d_g, g_size);
 
     cudaMalloc((void **)&d_g_out, g_size);
-    //cudaMalloc((void **)&d_f_coll, f_size);
 
     cudaMemset(d_phi, 0, size);
     cudaMemset(d_ux, 0, size);

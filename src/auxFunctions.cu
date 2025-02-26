@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <string>
 #include <cstdlib>
+#include <sstream>
 #include <stdexcept>
 
 #include "precision.cuh"
