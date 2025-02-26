@@ -319,9 +319,9 @@ __global__ void momentiCalc(
     dfloat ffy_val = ffy[idx3D];
     dfloat ffz_val = ffz[idx3D];
 
-    dfloat halfFx = ffx_val * 0.5;
-    dfloat halfFy = ffy_val * 0.5;
-    dfloat halfFz = ffz_val * 0.5;
+    dfloat halfFx = ffx_val * 0.5 * invRho;
+    dfloat halfFy = ffy_val * 0.5 * invRho;
+    dfloat halfFz = ffz_val * 0.5 * invRho;
 
     dfloat uxVal = sumUx + halfFx;
     dfloat uyVal = sumUy + halfFy;
