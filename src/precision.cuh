@@ -24,9 +24,7 @@ using namespace std;
 #elif defined(FD3Q27)
     #define FPOINTS 27
 #endif
-#ifdef PD3Q15
-    #define GPOINTS 15
-#elif defined(PD3Q19)
+#ifdef PD3Q19
     #define GPOINTS 19
 #endif
 
