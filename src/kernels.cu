@@ -51,12 +51,8 @@ __global__ void initTensor(
     int idx3D = inline3D(i,j,k,nx,ny);
 
     dfloat val = 1.0;
-    pxx[idx3D] = val;
-    pyy[idx3D] = val;
-    pzz[idx3D] = val;
-    pxy[idx3D] = val;
-    pxz[idx3D] = val;
-    pyz[idx3D] = val;
+    pxx[idx3D] = val; pyy[idx3D] = val; pzz[idx3D] = val;
+    pxy[idx3D] = val; pxz[idx3D] = val; pyz[idx3D] = val;
     rho[idx3D] = val;
 }
 
@@ -120,7 +116,7 @@ __global__ void initDist(
 
 // THE KERNELS BELOW ARE CALLED ON A LOOP
 
-// ============================================================================================== //
+// ================================================================================================== //
 
 __global__ void phiCalc(
     dfloat * __restrict__ phi,
