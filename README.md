@@ -1,6 +1,6 @@
-# Bubble-GPU
+# LBM-CUDA
 
-Bubble-GPU é um projeto para simulações de fluidos usando o método Lattice Boltzmann (LBM), implementado com suporte para GPUs, permitindo a execução eficiente de simulações computacionalmente intensivas. O foco atual está na simulação de bolhas estacionárias e oscilantes em 3D utilizando os modelos D3Q19 e D3Q27.
+LBM-CUDA é um projeto para simulações de fluidos multifásicos/multicomponentes usando o método Lattice Boltzmann (LBM), implementado com suporte para GPUs, permitindo a execução eficiente de simulações computacionalmente intensivas. O projeto tem suporte D3Q19/D3Q27 para o fluido principal e D3Q19 para o campo de fase.
 
 ## Estrutura do Projeto
 
@@ -20,13 +20,13 @@ Bubble-GPU é um projeto para simulações de fluidos usando o método Lattice B
    ```
 
    - **`<fluid_model>`**: Modelo de fluido (exemplo: `FD3Q19`).
-   - **`<phase_model>`**: Modelo de fase (exemplo: `PD3Q15`).
+   - **`<phase_model>`**: Modelo de fase (exemplo: `PD3Q19`).
    - **`<id>`**: Identificador único para a simulação (exemplo: `000`).
 
    Exemplo:
 
    ```bash
-   ./pipeline.sh FD3Q19 PD3Q15 001
+   ./pipeline.sh FD3Q19 PD3Q19 001
    ```
 
 2. **Resultados**:
@@ -40,7 +40,7 @@ Bubble-GPU é um projeto para simulações de fluidos usando o método Lattice B
 
 - **Executar uma simulação**:
   ```bash
-  ./pipeline.sh FD3Q19 PD3Q15 001
+  ./pipeline.sh FD3Q19 PD3Q19 001
   ```
 
 
