@@ -1,34 +1,29 @@
 #include "var.cuh"
-#include <cuda_runtime.h>
-#include <iostream>
-#include <vector>
-
-#include "precision.cuh"
 
 int mesh = 128;
 int nx = mesh; int ny = mesh; int nz = mesh;  
 
-__constant__ dfloat TAU;
-__constant__ dfloat CSSQ;
-__constant__ dfloat OMEGA;
-__constant__ dfloat SHARP_C;
-__constant__ dfloat SIGMA;
-__constant__ dfloat W[FPOINTS], W_G[GPOINTS];
+__constant__ float TAU;
+__constant__ float CSSQ;
+__constant__ float OMEGA;
+__constant__ float SHARP_C;
+__constant__ float SIGMA;
+__constant__ float W[FPOINTS], W_G[GPOINTS];
 __constant__ int CIX[FPOINTS], CIY[FPOINTS], CIZ[FPOINTS];
 
-dfloat *d_f, *d_g;
-dfloat *d_normx, *d_normy, *d_normz, *d_indicator;
-dfloat *d_curvature, *d_ffx, *d_ffy, *d_ffz;
-dfloat *d_ux, *d_uy, *d_uz, *d_pxx, *d_pyy, *d_pzz;
-dfloat *d_pxy, *d_pxz, *d_pyz, *d_rho, *d_phi;
-dfloat *d_g_out; // *d_f_coll
+float *d_f, *d_g;
+float *d_normx, *d_normy, *d_normz, *d_indicator;
+float *d_curvature, *d_ffx, *d_ffy, *d_ffz;
+float *d_ux, *d_uy, *d_uz, *d_pxx, *d_pyy, *d_pzz;
+float *d_pxy, *d_pxz, *d_pyz, *d_rho, *d_phi;
+float *d_g_out; // *d_f_coll
 
 // ========================================================================== parametros ========================================================================== //
-dfloat h_tau = 0.505;
-dfloat h_cssq = 1.0 / 3.0;
-dfloat h_omega = 1.0 / h_tau;
-dfloat h_sharp_c = 0.15 * 3.0;
-dfloat h_sigma = 0.1;
+float h_tau = 0.505;
+float h_cssq = 1.0 / 3.0;
+float h_omega = 1.0 / h_tau;
+float h_sharp_c = 0.15 * 3.0;
+float h_sigma = 0.1;
 
 // fluid velocity set
 #ifdef FD3Q19
@@ -43,13 +38,13 @@ dfloat h_sigma = 0.1;
 
 // fluid weights
 #ifdef FD3Q19
-    dfloat h_w[19] = {
+    float h_w[19] = {
         1.0 / 3.0, 
         1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0,
         1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0
     };
 #elif defined(FD3Q27)
-    dfloat h_w[27] = {
+    float h_w[27] = {
         8.0 / 27.0,
         2.0 / 27.0, 2.0 / 27.0, 2.0 / 27.0, 2.0 / 27.0, 2.0 / 27.0, 2.0 / 27.0, 
         1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 1.0 / 54.0, 
@@ -59,7 +54,7 @@ dfloat h_sigma = 0.1;
 
 // phase field weights
 #ifdef PD3Q19
-    dfloat h_w_g[19] = {
+    float h_w_g[19] = {
         1.0 / 3.0, 
         1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0,
         1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0
@@ -68,9 +63,9 @@ dfloat h_sigma = 0.1;
 // =============================================================================================================================================================== //
 
 void initializeVars() {
-    size_t size = nx * ny * nz * sizeof(dfloat);            
-    size_t f_size = nx * ny * nz * FPOINTS * sizeof(dfloat); 
-    size_t g_size = nx * ny * nz * GPOINTS * sizeof(dfloat); 
+    size_t size = nx * ny * nz * sizeof(float);            
+    size_t f_size = nx * ny * nz * FPOINTS * sizeof(float); 
+    size_t g_size = nx * ny * nz * GPOINTS * sizeof(float); 
 
     cudaMalloc((void **)&d_rho, size);
     cudaMalloc((void **)&d_phi, size);
@@ -114,14 +109,14 @@ void initializeVars() {
     cudaMemset(d_ffy, 0, size);
     cudaMemset(d_ffz, 0, size);
 
-    cudaMemcpyToSymbol(TAU, &h_tau, sizeof(dfloat));
-    cudaMemcpyToSymbol(CSSQ, &h_cssq, sizeof(dfloat));
-    cudaMemcpyToSymbol(OMEGA, &h_omega, sizeof(dfloat));
-    cudaMemcpyToSymbol(SHARP_C, &h_sharp_c, sizeof(dfloat));
-    cudaMemcpyToSymbol(SIGMA, &h_sigma, sizeof(dfloat));
+    cudaMemcpyToSymbol(TAU, &h_tau, sizeof(float));
+    cudaMemcpyToSymbol(CSSQ, &h_cssq, sizeof(float));
+    cudaMemcpyToSymbol(OMEGA, &h_omega, sizeof(float));
+    cudaMemcpyToSymbol(SHARP_C, &h_sharp_c, sizeof(float));
+    cudaMemcpyToSymbol(SIGMA, &h_sigma, sizeof(float));
 
-    cudaMemcpyToSymbol(W, &h_w, FPOINTS * sizeof(dfloat));
-    cudaMemcpyToSymbol(W_G, &h_w_g, GPOINTS * sizeof(dfloat));
+    cudaMemcpyToSymbol(W, &h_w, FPOINTS * sizeof(float));
+    cudaMemcpyToSymbol(W_G, &h_w_g, GPOINTS * sizeof(float));
 
     cudaMemcpyToSymbol(CIX, &h_cix, FPOINTS * sizeof(int));
     cudaMemcpyToSymbol(CIY, &h_ciy, FPOINTS * sizeof(int));

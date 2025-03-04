@@ -1,17 +1,7 @@
 #include "auxFunctions.cuh"
 #include "var.cuh"
-#include <cuda_runtime.h>
-#include <fstream>
-#include <vector>
-#include <iomanip>
-#include <string>
-#include <cstdlib>
-#include <sstream>
-#include <stdexcept>
 
-#include "precision.cuh"
-
-void freeMemory(dfloat **pointers, int count) {
+void freeMemory(float **pointers, int count) {
     for (int i = 0; i < count; ++i) {
         if (pointers[i] != nullptr) {
             cudaFree(pointers[i]);
@@ -20,7 +10,7 @@ void freeMemory(dfloat **pointers, int count) {
 }
 
 void generateSimulationInfoFile(
-    const string& filepath, const int nx, const int ny, const int nz, const int stamp, const int nsteps, const dfloat tau, 
+    const string& filepath, const int nx, const int ny, const int nz, const int stamp, const int nsteps, const float tau, 
     const string& sim_id, const string& fluid_model
 ) {
     try {
@@ -57,12 +47,12 @@ void generateSimulationInfoFile(
 }
 
 void copyAndSaveToBinary(
-    const dfloat* d_data, size_t size, const string& sim_dir, 
+    const float* d_data, size_t size, const string& sim_dir, 
     const string& id, int t, const string& var_name
 ) {
-    vector<dfloat> host_data(size);
+    vector<float> host_data(size);
     
-    cudaMemcpy(host_data.data(), d_data, size * sizeof(dfloat), cudaMemcpyDeviceToHost);
+    cudaMemcpy(host_data.data(), d_data, size * sizeof(float), cudaMemcpyDeviceToHost);
     
     ostringstream filename;
     filename << sim_dir << id << "_" << var_name << setw(6) << setfill('0') << t << ".bin";
@@ -72,6 +62,6 @@ void copyAndSaveToBinary(
         cerr << "Erro ao abrir o arquivo " << filename.str() << " para escrita." << endl;
         return;
     }
-    file.write(reinterpret_cast<const char*>(host_data.data()), host_data.size() * sizeof(dfloat));
+    file.write(reinterpret_cast<const char*>(host_data.data()), host_data.size() * sizeof(float));
     file.close();
 }

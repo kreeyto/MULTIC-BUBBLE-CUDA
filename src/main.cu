@@ -1,14 +1,6 @@
 #include "kernels.cuh"
 #include "auxFunctions.cuh"
 #include "var.cuh"
-#include <fstream>
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <chrono>
-
-#include "precision.cuh"
 
 int main(int argc, char* argv[]) {
     auto start_time = chrono::high_resolution_clock::now();
@@ -39,13 +31,13 @@ int main(int argc, char* argv[]) {
     // ============================================================================================================================================================= //
 
     // ========================= //
-    int stamp = 100, nsteps = 5000;
+    int stamp = 1, nsteps = 1;
     // ========================= //
     initializeVars();
 
     string info_file = sim_dir + id + "_info.txt";
-    dfloat h_tau;
-    cudaMemcpyFromSymbol(&h_tau, TAU, sizeof(dfloat), 0, cudaMemcpyDeviceToHost);
+    float h_tau;
+    cudaMemcpyFromSymbol(&h_tau, TAU, sizeof(float), 0, cudaMemcpyDeviceToHost);
     generateSimulationInfoFile(info_file, nx, ny, nz, stamp, nsteps, h_tau, id, fluid_model);
 
     dim3 threadsPerBlock(8,8,8);
@@ -54,10 +46,12 @@ int main(int argc, char* argv[]) {
                    (nz + threadsPerBlock.z - 1) / threadsPerBlock.z);
 
     // STREAMS
-    cudaStream_t mainStream;
+    cudaStream_t mainStream, collFluid, collPhase;
     cudaStreamCreate(&mainStream);
+    cudaStreamCreate(&collFluid);
+    cudaStreamCreate(&collPhase);
 
-    // ================== INIT ================== //
+    // ================== initlbm.cu ================== //
 
         initTensor<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
             d_pxx, d_pyy, d_pzz, 
@@ -73,12 +67,9 @@ int main(int argc, char* argv[]) {
             d_rho, d_phi, d_f, d_g, nx, ny, nz
         ); 
 
-    // ========================================= //
+    // =============================================== //
 
-    vector<dfloat> phi_host(nx * ny * nz);
-    vector<dfloat> ux_host(nx * ny * nz);
-    vector<dfloat> uy_host(nx * ny * nz);
-    vector<dfloat> uz_host(nx * ny * nz);
+    vector<float> phi_host(nx * ny * nz);
 
     for (int t = 0; t <= nsteps ; ++t) {
         cout << "Passo " << t << " de " << nsteps << " iniciado..." << endl;
@@ -136,14 +127,22 @@ int main(int argc, char* argv[]) {
 
         // ==================== COLLISION & STREAMING ==================== //
             
-            collisionCalc<<<numBlocks, threadsPerBlock, 0, mainStream>>> (
-                d_ux, d_uy, d_uz, 
-                d_normx, d_normy, d_normz,
-                d_ffx, d_ffy, d_ffz,
-                d_rho, d_phi, d_g, 
+            // too heavy of a kernel. reduce register pressure; consider shared memory
+            collisionFluid<<<numBlocks, threadsPerBlock, 0, collFluid>>> (
+                d_f, d_ux, d_uy, d_uz, 
+                d_ffx, d_ffy, d_ffz, d_rho,
                 d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, 
-                nx, ny, nz, d_f
+                nx, ny, nz
             ); 
+
+            collisionPhase<<<numBlocks, threadsPerBlock, 0, collPhase>>> (
+                d_g, d_ux, d_uy, d_uz, 
+                d_phi, d_normx, d_normy, d_normz, 
+                nx, ny, nz
+            ); 
+
+            cudaStreamSynchronize(collFluid);
+            cudaStreamSynchronize(collPhase);
 
         // =============================================================== //    
 
@@ -155,7 +154,7 @@ int main(int argc, char* argv[]) {
                 d_g, d_g_out, 
                 nx, ny, nz
             ); 
-            cudaMemcpy(d_g, d_g_out, nx * ny * nz * GPOINTS * sizeof(dfloat), cudaMemcpyDeviceToDevice);
+            swap(d_g, d_g_out);
 
         // ================================================= //
 
@@ -186,17 +185,19 @@ int main(int argc, char* argv[]) {
         if (t % stamp == 0) {
 
             copyAndSaveToBinary(d_phi, nx * ny * nz, sim_dir, id, t, "phi");
-            copyAndSaveToBinary(d_ux, nx * ny * nz, sim_dir, id, t, "ux");
-            copyAndSaveToBinary(d_uy, nx * ny * nz, sim_dir, id, t, "uy");
-            copyAndSaveToBinary(d_uz, nx * ny * nz, sim_dir, id, t, "uz");
+            //copyAndSaveToBinary(d_ux, nx * ny * nz, sim_dir, id, t, "ux");
+            //copyAndSaveToBinary(d_uy, nx * ny * nz, sim_dir, id, t, "uy");
+            //copyAndSaveToBinary(d_uz, nx * ny * nz, sim_dir, id, t, "uz");
 
             cout << "Passo " << t << ": Dados salvos em " << sim_dir << endl;
         }
     }
 
     cudaStreamDestroy(mainStream);
+    cudaStreamDestroy(collFluid);
+    cudaStreamDestroy(collPhase);
 
-    dfloat *pointers[] = {d_f, d_g, d_phi, d_rho, 
+    float *pointers[] = {d_f, d_g, d_phi, d_rho, 
                           d_normx, d_normy, d_normz, d_indicator,
                           d_curvature, d_ffx, d_ffy, d_ffz, d_ux, d_uy, d_uz,
                           d_pxx, d_pyy, d_pzz, d_pxy, d_pxz, d_pyz, d_g_out
