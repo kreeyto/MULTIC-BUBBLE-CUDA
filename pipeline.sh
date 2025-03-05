@@ -7,7 +7,6 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 RESET='\033[0m'
 
-# Detectando o sistema operacional
 OS_TYPE=$(uname -s)
 
 if [[ "$OS_TYPE" == "Linux" ]]; then

@@ -18,7 +18,7 @@ __global__ void initTensor(
 
     int idx3D = inline3D(i,j,k,nx,ny);
 
-    float val = 1.0;
+    float val = 1.0f;
     pxx[idx3D] = val; pyy[idx3D] = val; pzz[idx3D] = val;
     pxy[idx3D] = val; pxz[idx3D] = val; pyz[idx3D] = val;
     rho[idx3D] = val;
@@ -36,14 +36,14 @@ __global__ void initPhase(
 
     int idx3D = inline3D(i,j,k,nx,ny);
 
-    float bubble_radius = 20.0 * nx / 150.0;
+    float bubble_radius = 20.0f * nx / 150.0f;
 
-    float dx = i - nx * 0.5;
-    float dy = j - ny * 0.5;
-    float dz = k - nz * 0.5;
-    float Ri = sqrt((dx * dx) / 4.0 + dy * dy + dz * dz);
+    float dx = i - nx * 0.5f;
+    float dy = j - ny * 0.5f;
+    float dz = k - nz * 0.5f;
+    float Ri = sqrt((dx * dx) / 4.0f + dy * dy + dz * dz);
 
-    float phi_val = 0.5 + 0.5 * tanh(2.0 * (bubble_radius - Ri) / 3.0);
+    float phi_val = 0.5f + 0.5f * tanh(2.0f * (bubble_radius - Ri) / 3.0f);
 
     phi[idx3D] = phi_val;
 }

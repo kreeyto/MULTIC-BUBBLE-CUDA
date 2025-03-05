@@ -15,7 +15,7 @@ __global__ void phiCalc(
 
     int idx3D = inline3D(i,j,k,nx,ny);
 
-    float sum = 0.0;       
+    float sum = 0.0f;       
     for (int l = 0; l < GPOINTS; ++l) {
         int idx4D = inline4D(i,j,k,l,nx,ny,nz);
         sum += g[idx4D];
@@ -46,7 +46,7 @@ __global__ void gradCalc(
 
     int idx3D = inline3D(i,j,k,nx,ny);
 
-    float grad_fix = 0.0, grad_fiy = 0.0, grad_fiz = 0.0;
+    float grad_fix = 0.0f, grad_fiy = 0.0f, grad_fiz = 0.0f;
     for (int l = 0; l < FPOINTS; ++l) {
         int ii = i + CIX[l];
         int jj = j + CIY[l];
@@ -54,7 +54,7 @@ __global__ void gradCalc(
 
         int offset = inline3D(ii,jj,kk,nx,ny);
         float val = phi[offset];
-        float coef = 3.0 * W[l];
+        float coef = 3.0f * W[l];
         grad_fix += coef * CIX[l] * val;
         grad_fiy += coef * CIY[l] * val;
         grad_fiz += coef * CIZ[l] * val;
@@ -98,7 +98,7 @@ __global__ void curvatureCalc(
     float normy_ = normy[idx3D];
     float normz_ = normz[idx3D];
     float ind_ = indicator[idx3D];
-    float curv = 0.0;
+    float curv = 0.0f;
 
     for (int l = 0; l < FPOINTS; ++l) {
         int ii = i + CIX[l];
@@ -109,7 +109,7 @@ __global__ void curvatureCalc(
         float normxN = normx[offset];
         float normyN = normy[offset];
         float normzN = normz[offset];
-        float coef = 3.0 * W[l];
+        float coef = 3.0f * W[l];
         curv -= coef * (CIX[l] * normxN + CIY[l] * normyN + CIZ[l] * normzN);
     }
 
@@ -160,13 +160,13 @@ __global__ void momentiCalc(
         fVal[l] = f[idx4D];
     }
 
-    float rhoVal = 0.0;
-    float rhoShift = 0.0;
+    float rhoVal = 0.0f;
+    float rhoShift = 0.0f;
     for (int l = 0; l < FPOINTS; ++l)
         rhoShift += fVal[l];
-    rhoVal = rhoShift + 1.0;
+    rhoVal = rhoShift + 1.0f;
 
-    float invRho = 1.0 / rhoVal;
+    float invRho = 1.0f / rhoVal;
 
     float sumUx = invRho * (fVal[1] - fVal[2] + fVal[7] - fVal[8] + fVal[9] - fVal[10] + fVal[13] - fVal[14] + fVal[15] - fVal[16]);
     float sumUy = invRho * (fVal[3] - fVal[4] + fVal[7] - fVal[8] + fVal[11] - fVal[12] + fVal[14] - fVal[13] + fVal[17] - fVal[18]);
@@ -176,30 +176,29 @@ __global__ void momentiCalc(
     float ffy_val = ffy[idx3D];
     float ffz_val = ffz[idx3D];
 
-    float halfFx = ffx_val * 0.5 * invRho;
-    float halfFy = ffy_val * 0.5 * invRho;
-    float halfFz = ffz_val * 0.5 * invRho;
+    float halfFx = ffx_val * 0.5f * invRho;
+    float halfFy = ffy_val * 0.5f * invRho;
+    float halfFz = ffz_val * 0.5f * invRho;
 
     float uxVal = sumUx + halfFx;
     float uyVal = sumUy + halfFy;
     float uzVal = sumUz + halfFz;
 
-    float invCssq = 1.0 / CSSQ;
-    float uu = 0.5 * (uxVal * uxVal + uyVal * uyVal + uzVal * uzVal) * invCssq;
-    float invRhoCssq = 1.0 / (rhoVal * CSSQ);
+    float invCssq = 1.0f / CSSQ;
+    float uu = 0.5f * (uxVal * uxVal + uyVal * uyVal + uzVal * uzVal) * invCssq;
+    float invRhoCssq = 1.0f / (rhoVal * CSSQ);
 
-    float sumXX = 0.0, sumYY = 0.0, sumZZ = 0.0;
-    float sumXY = 0.0, sumXZ = 0.0, sumYZ = 0.0;
+    float sumXX = 0.0f, sumYY = 0.0f, sumZZ = 0.0f;
+    float sumXY = 0.0f, sumXZ = 0.0f, sumYZ = 0.0f;
 
     for (int l = 0; l < FPOINTS; ++l) {
         float udotc = (uxVal * CIX[l] + uyVal * CIY[l] + uzVal * CIZ[l]) * invCssq;
-        float udotc2 = udotc * udotc;
-        float eqBase = rhoVal * (udotc + 0.5 * udotc2 - uu);
+        float eqBase = rhoVal * (udotc + 0.5f * udotc*udotc - uu);
         float common = W[l] * (rhoVal + eqBase);
         float HeF = common * ((CIX[l] - uxVal) * ffx_val +
-                               (CIY[l] - uyVal) * ffy_val +
-                               (CIZ[l] - uzVal) * ffz_val) * invRhoCssq;
-        float feq = common - 0.5 * HeF; 
+                              (CIY[l] - uyVal) * ffy_val +
+                              (CIZ[l] - uzVal) * ffz_val) * invRhoCssq;
+        float feq = common - 0.5f * HeF; 
         float feq_shifted = feq - W[l];
         fneq[l] = fVal[l] - feq_shifted;
     }
@@ -254,29 +253,29 @@ __global__ void collisionFluid(
     float pxx_val = pxx[idx3D], pyy_val = pyy[idx3D], pzz_val = pzz[idx3D];
     float pxy_val = pxy[idx3D], pxz_val = pxz[idx3D], pyz_val = pyz[idx3D];
 
-    float u_sq = ux_val*ux_val + uy_val*uy_val + uz_val*uz_val;
-    float uu = 0.5 * u_sq / CSSQ;
-    float inv_rho_CSSQ = 1.0 / (rho_val * CSSQ);
-    float omc = 1.0 - OMEGA;
-    float invCSSQ = 1.0 / CSSQ;
+    float uu = 0.5f * (ux_val*ux_val + uy_val*uy_val + uz_val*uz_val) / CSSQ;
+    float invRhoCssq = 1.0f / (rho_val * CSSQ);
+    float invCssq = 1.0f / CSSQ;
 
     for (int l = 0; l < FPOINTS; ++l) {
-        int ii = i + CIX[l]; int jj = j + CIY[l]; int kk = k + CIZ[l];
-        int offset = inline4D(ii,jj,kk,l,nx,ny,nz);
-        float udotc = (ux_val * CIX[l] + uy_val * CIY[l] + uz_val * CIZ[l]) * invCSSQ;
-        float feq = W[l] * (rho_val + rho_val * (udotc + 0.5 * udotc*udotc - uu));
-        float feq_shifted = feq - W[l];
-        float HeF = 0.5 * feq_shifted * ( (CIX[l] - ux_val) * ffx_val +
-                                           (CIY[l] - uy_val) * ffy_val +
-                                           (CIZ[l] - uz_val) * ffz_val ) * inv_rho_CSSQ;
-        float fneq = (W[l] / (2.0 * CSSQ * CSSQ)) * ((CIX[l]*CIX[l] - CSSQ) * pxx_val +
+        int ii = i + CIX[l]; 
+        int jj = j + CIY[l]; 
+        int kk = k + CIZ[l];
+        
+        float udotc = (ux_val * CIX[l] + uy_val * CIY[l] + uz_val * CIZ[l]) * invCssq;
+        float feq = (W[l] * (rho_val + rho_val * (udotc + 0.5f * udotc*udotc - uu))) - W[l];
+        float HeF = feq * ( (CIX[l] - ux_val) * ffx_val +
+                            (CIY[l] - uy_val) * ffy_val +
+                            (CIZ[l] - uz_val) * ffz_val ) * invRhoCssq;
+        float fneq = (W[l] / (2.0f * CSSQ * CSSQ)) * ((CIX[l]*CIX[l] - CSSQ) * pxx_val +
                                                       (CIY[l]*CIY[l] - CSSQ) * pyy_val +
                                                       (CIZ[l]*CIZ[l] - CSSQ) * pzz_val +
-                                                       2.0 * CIX[l] * CIY[l] * pxy_val +
-                                                       2.0 * CIX[l] * CIZ[l] * pxz_val +
-                                                       2.0 * CIY[l] * CIZ[l] * pyz_val
+                                                       2.0f * CIX[l] * CIY[l] * pxy_val +
+                                                       2.0f * CIX[l] * CIZ[l] * pxz_val +
+                                                       2.0f * CIY[l] * CIZ[l] * pyz_val
                                                     );
-        f[offset] = feq_shifted + omc * fneq + HeF; 
+        int offset = inline4D(ii,jj,kk,l,nx,ny,nz);
+        f[offset] = feq + (1.0f - OMEGA) * fneq + 0.5f * HeF; 
     }
 }
 
@@ -307,13 +306,13 @@ __global__ void collisionPhase(
     float normy_val = normy[idx3D];
     float normz_val = normz[idx3D];
 
-    float invCSSQ = 1.0 / CSSQ;
+    float invCSSQ = 1.0f / CSSQ;
 
-    float phi_norm = SHARP_C * phi_val * (1.0 - phi_val);
+    float phi_norm = SHARP_C * phi_val * (1.0f - phi_val);
     for (int l = 0; l < GPOINTS; ++l) {
         int idx4D = inline4D(i,j,k,l,nx,ny,nz);
         float udotc = (ux_val * CIX[l] + uy_val * CIY[l] + uz_val * CIZ[l]) * invCSSQ;
-        float geq = W_G[l] * phi_val * (1.0 + udotc);
+        float geq = W_G[l] * phi_val * (1.0f + udotc);
         float Hi = phi_norm * (CIX[l] * normx_val + CIY[l] * normy_val + CIZ[l] * normz_val);
         g[idx4D] = geq + W_G[l] * Hi; // + (1 - omega) * gneq;
         // there is an option to stream g in collision as f is being done
@@ -364,28 +363,27 @@ __global__ void fgBoundary(
     int j = blockIdx.y * blockDim.y + threadIdx.y;
     int k = blockIdx.z * blockDim.z + threadIdx.z;
 
-    if (i >= nx || j >= ny || k >= nz) return;
+    bool isValidEdge = (i < nx && j < ny && k < nz) && (i == 0 || i == nx-1 || j == 0 || j == ny-1 || k == 0 || k == nz-1);
+    if (!isValidEdge) return;
 
     int idx3D = inline3D(i,j,k,nx,ny);
 
-    if (i == 0 || i == nx-1 || j == 0 || j == ny-1 || k == 0 || k == nz-1) {
-        for (int l = 0; l < FPOINTS; ++l) {
-            int ni = i + CIX[l];
-            int nj = j + CIY[l];
-            int nk = k + CIZ[l];
-            if (ni >= 0 && ni < nx && nj >= 0 && nj < ny && nk >= 0 && nk < nz) {
-                int idx4D = inline4D(ni,nj,nk,l,nx,ny,nz);
-                f[idx4D] = (rho[idx3D] - 1.0) * W[l];
-            }
+    for (int l = 0; l < FPOINTS; ++l) {
+        int ni = i + CIX[l];
+        int nj = j + CIY[l];
+        int nk = k + CIZ[l];
+        if (ni >= 0 && ni < nx && nj >= 0 && nj < ny && nk >= 0 && nk < nz) {
+            int idx4D = inline4D(ni,nj,nk,l,nx,ny,nz);
+            f[idx4D] = (rho[idx3D] - 1.0f) * W[l];
         }
-        for (int l = 0; l < GPOINTS; ++l) {
-            int ni = i + CIX[l];
-            int nj = j + CIY[l];
-            int nk = k + CIZ[l];
-            if (ni >= 0 && ni < nx && nj >= 0 && nj < ny && nk >= 0 && nk < nz) {
-                int idx4D = inline4D(ni,nj,nk,l,nx,ny,nz);
-                g[idx4D] = phi[idx3D] * W_G[l];
-            }
+    }
+    for (int l = 0; l < GPOINTS; ++l) {
+        int ni = i + CIX[l];
+        int nj = j + CIY[l];
+        int nk = k + CIZ[l];
+        if (ni >= 0 && ni < nx && nj >= 0 && nj < ny && nk >= 0 && nk < nz) {
+            int idx4D = inline4D(ni,nj,nk,l,nx,ny,nz);
+            g[idx4D] = phi[idx3D] * W_G[l];
         }
     }
 }

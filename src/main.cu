@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     // ============================================================================================================================================================= //
 
     // ========================= //
-    int stamp = 1, nsteps = 1;
+    int stamp = 1, nsteps = 0;
     // ========================= //
     initializeVars();
 
@@ -127,7 +127,6 @@ int main(int argc, char* argv[]) {
 
         // ==================== COLLISION & STREAMING ==================== //
             
-            // too heavy of a kernel. reduce register pressure; consider shared memory
             collisionFluid<<<numBlocks, threadsPerBlock, 0, collFluid>>> (
                 d_f, d_ux, d_uy, d_uz, 
                 d_ffx, d_ffy, d_ffz, d_rho,
