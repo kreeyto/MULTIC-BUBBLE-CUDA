@@ -16,6 +16,7 @@ __global__ void phiCalc(
     int idx3D = inline3D(i,j,k,nx,ny);
 
     float sum = 0.0f;       
+    #pragma unroll 19
     for (int l = 0; l < GPOINTS; ++l) {
         int idx4D = inline4D(i,j,k,l,nx,ny,nz);
         sum += g[idx4D];
@@ -47,6 +48,7 @@ __global__ void gradCalc(
     int idx3D = inline3D(i,j,k,nx,ny);
 
     float grad_fix = 0.0f, grad_fiy = 0.0f, grad_fiz = 0.0f;
+    #pragma unroll 19
     for (int l = 0; l < FPOINTS; ++l) {
         int ii = i + CIX[l];
         int jj = j + CIY[l];
@@ -100,6 +102,7 @@ __global__ void curvatureCalc(
     float ind_ = indicator[idx3D];
     float curv = 0.0f;
 
+    #pragma unroll 19
     for (int l = 0; l < FPOINTS; ++l) {
         int ii = i + CIX[l];
         int jj = j + CIY[l];
@@ -155,6 +158,7 @@ __global__ void momentiCalc(
     float fneq[FPOINTS];
     float fVal[FPOINTS];
 
+    #pragma unroll 19
     for (int l = 0; l < FPOINTS; ++l) {
         int idx4D = inline4D(i,j,k,l,nx,ny,nz);
         fVal[l] = f[idx4D];
@@ -162,6 +166,7 @@ __global__ void momentiCalc(
 
     float rhoVal = 0.0f;
     float rhoShift = 0.0f;
+    #pragma unroll 19
     for (int l = 0; l < FPOINTS; ++l)
         rhoShift += fVal[l];
     rhoVal = rhoShift + 1.0f;
@@ -191,6 +196,7 @@ __global__ void momentiCalc(
     float sumXX = 0.0f, sumYY = 0.0f, sumZZ = 0.0f;
     float sumXY = 0.0f, sumXZ = 0.0f, sumYZ = 0.0f;
 
+    #pragma unroll 19
     for (int l = 0; l < FPOINTS; ++l) {
         float udotc = (uxVal * CIX[l] + uyVal * CIY[l] + uzVal * CIZ[l]) * invCssq;
         float eqBase = rhoVal * (udotc + 0.5f * udotc*udotc - uu);
@@ -208,7 +214,7 @@ __global__ void momentiCalc(
     sumZZ = fneq[5] + fneq[6] + fneq[9] + fneq[10] + fneq[11] + fneq[12] + fneq[15] + fneq[16] + fneq[17] + fneq[18];
     sumXY = fneq[7] - fneq[13] + fneq[8] - fneq[14];
     sumXZ = fneq[9] - fneq[15] + fneq[10] - fneq[16];
-    sumYZ = fneq[11] - fneq[17] + fneq[12] - fneq[18];
+    sumYZ = fneq[11] - fneq[17] + fneq[12] - fneq[18]; 
 
     pxx[idx3D] = sumXX; pyy[idx3D] = sumYY; pzz[idx3D] = sumZZ;
     pxy[idx3D] = sumXY; pxz[idx3D] = sumXZ; pyz[idx3D] = sumYZ;
@@ -257,6 +263,7 @@ __global__ void collisionFluid(
     float invRhoCssq = 1.0f / (rho_val * CSSQ);
     float invCssq = 1.0f / CSSQ;
 
+    #pragma unroll 19
     for (int l = 0; l < FPOINTS; ++l) {
         int ii = i + CIX[l]; 
         int jj = j + CIY[l]; 
@@ -309,6 +316,7 @@ __global__ void collisionPhase(
     float invCSSQ = 1.0f / CSSQ;
 
     float phi_norm = SHARP_C * phi_val * (1.0f - phi_val);
+    #pragma unroll 19
     for (int l = 0; l < GPOINTS; ++l) {
         int idx4D = inline4D(i,j,k,l,nx,ny,nz);
         float udotc = (ux_val * CIX[l] + uy_val * CIY[l] + uz_val * CIZ[l]) * invCSSQ;
@@ -336,6 +344,7 @@ __global__ void streamingCalc(
 
     if (i >= nx || j >= ny || k >= nz) return;
 
+    #pragma unroll 19
     for (int l = 0; l < GPOINTS; ++l) {
         int src_i = (i - CIX[l] + nx) & (nx-1);
         int src_j = (j - CIY[l] + ny) & (ny-1);
@@ -368,6 +377,7 @@ __global__ void fgBoundary(
 
     int idx3D = inline3D(i,j,k,nx,ny);
 
+    #pragma unroll 19
     for (int l = 0; l < FPOINTS; ++l) {
         int ni = i + CIX[l];
         int nj = j + CIY[l];
@@ -377,6 +387,7 @@ __global__ void fgBoundary(
             f[idx4D] = (rho[idx3D] - 1.0f) * W[l];
         }
     }
+    #pragma unroll 19
     for (int l = 0; l < GPOINTS; ++l) {
         int ni = i + CIX[l];
         int nj = j + CIY[l];

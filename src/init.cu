@@ -18,7 +18,7 @@ __global__ void initTensor(
 
     int idx3D = inline3D(i,j,k,nx,ny);
 
-    float val = 1.0f;
+    float val = 1.0;
     pxx[idx3D] = val; pyy[idx3D] = val; pzz[idx3D] = val;
     pxy[idx3D] = val; pxz[idx3D] = val; pyz[idx3D] = val;
     rho[idx3D] = val;
@@ -36,14 +36,14 @@ __global__ void initPhase(
 
     int idx3D = inline3D(i,j,k,nx,ny);
 
-    float bubble_radius = 20.0f * nx / 150.0f;
+    float bubble_radius = 20.0 * nx / 150.0;
 
-    float dx = i - nx * 0.5f;
-    float dy = j - ny * 0.5f;
-    float dz = k - nz * 0.5f;
-    float Ri = sqrt((dx * dx) / 4.0f + dy * dy + dz * dz);
+    float dx = i - nx * 0.5;
+    float dy = j - ny * 0.5;
+    float dz = k - nz * 0.5;
+    float Ri = sqrt((dx * dx) / 4.0 + dy * dy + dz * dz);
 
-    float phi_val = 0.5f + 0.5f * tanh(2.0f * (bubble_radius - Ri) / 3.0f);
+    float phi_val = 0.5 + 0.5 * tanh(2.0 * (bubble_radius - Ri) / 3.0);
 
     phi[idx3D] = phi_val;
 }
@@ -66,11 +66,12 @@ __global__ void initDist(
     float rho_val = rho[idx3D];
     float phi_val = phi[idx3D];
 
+    #pragma unroll 19
     for (int l = 0; l < FPOINTS; ++l) {
         int idx4D = inline4D(i,j,k,l,nx,ny,nz);
         f[idx4D] = (W[l] * rho_val) - W[l];
     }
-
+    #pragma unroll 19
     for (int l = 0; l < GPOINTS; ++l) {
         int idx4D = inline4D(i,j,k,l,nx,ny,nz);
         g[idx4D] = W_G[l] * phi_val;

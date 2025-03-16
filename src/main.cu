@@ -205,7 +205,13 @@ int main(int argc, char* argv[]) {
 
     auto end_time = chrono::high_resolution_clock::now();
     chrono::duration<double> elapsed_time = end_time - start_time;
-    cout << "Tempo total de execução: " << elapsed_time.count() << " segundos" << endl;
+    long long totalcells = static_cast<long long>(nx) * ny * nz * nsteps;
+    double mlups = static_cast<double>(totalcells) / (elapsed_time.count() * 1e6);
+
+    cout << "\n// =============================================== //\n";
+    cout << "     Tempo total de execução: " << elapsed_time.count() << " segundos\n";
+    cout << "     Desempenho: " << mlups << " MLUPS\n";
+    cout << "// =============================================== //\n" << endl;
 
     return 0;
 }
