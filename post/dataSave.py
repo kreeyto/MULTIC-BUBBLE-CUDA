@@ -2,6 +2,7 @@ from pyevtk.hl import gridToVTK
 from fileTreat import *
 
 def saveVTK3D(macrsDict, path, filenameWrite, points=True, normVal=1):
+
     info = getSimInfo(path)
 
     if(normVal == 0):

@@ -15,27 +15,21 @@
 
 using namespace std;
 
-#define SINGLE_PRECISION
 #define PRECISION_TYPE "float"
 
-#define BLOCK_SIZE 4
-
-#define IDX3D(i,j,k) ((i) + (j) * nx + (k) * nx * ny)
-#define IDX4D(i,j,k,l) ((i) + (j) * nx + (k) * nx * ny + (l) * nx * ny * nz)
-__device__ __forceinline__ int inline3D(int i, int j, int k, int nx, int ny) {
-    return i + j * nx + k * nx * ny;
+#define IDX3D(i,j,k) ((i) + (j) * NX + (k) * NX * NY)
+#define IDX4D(i,j,k,l) ((i) + (j) * NX + (k) * NX * NY + (l) * NX * NY * NZ)
+__device__ __forceinline__ int inline3D(int i, int j, int k, int NX, int NY) {
+    return i + j * NX + k * NX * NY;
 }
-__device__ __forceinline__ int inline4D(int i, int j, int k, int l, int nx, int ny, int nz) {
-    return inline3D(i,j,k,nx,ny) + l * nx * ny * nz;
+__device__ __forceinline__ int inline4D(int i, int j, int k, int l, int NX, int NY, int NZ) {
+    return inline3D(i,j,k,NX,NY) + l * NX * NY * NZ;
 }
 
-#ifdef FD3Q19
-    #define FPOINTS 19
-#elif defined(FD3Q27)
-    #define FPOINTS 27
-#endif
-#ifdef PD3Q19
-    #define GPOINTS 19
+#ifdef D3Q19
+    #define NLINKS 19
+#elif defined(D3Q27)
+    #define NLINKS 27
 #endif
 
 #endif
