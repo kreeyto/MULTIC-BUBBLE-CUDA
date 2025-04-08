@@ -427,3 +427,37 @@ __global__ void boundaryConditions(
 
 // =================================================================================================== //
 
+__global__ void movingWallBC(
+    float * __restrict__ f,
+    const float * __restrict__ rho,
+    const int NX, const int NY, const int NZ
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int k = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i >= NX || k >= NZ) return;
+
+    const float U_wall = 0.03f;
+
+    int j_bot = 0;
+    int idx_bot = inline3D(i, j_bot, k, NX, NY);
+    float rho_bot = rho[idx_bot];
+
+    for (int l = 0; l < NLINKS; ++l) {
+        int idx4D = inline4D(i, j_bot, k, l, NX, NY, NZ);
+        float cu = (CIX[l] * (-U_wall)) / CSSQ;
+        f[idx4D] = rho_bot * W[l] * (1.0f + cu);
+    }
+
+    int j_top = NY - 1;
+    int idx_top = inline3D(i, j_top, k, NX, NY);
+    float rho_top = rho[idx_top];
+
+    for (int l = 0; l < NLINKS; ++l) {
+        int idx4D = inline4D(i, j_top, k, l, NX, NY, NZ);
+        float cu = (CIX[l] * U_wall) / CSSQ;
+        f[idx4D] = rho_top * W[l] * (1.0f + cu);
+    }
+}
+
+

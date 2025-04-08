@@ -123,4 +123,10 @@ __global__ void boundaryConditions(
     const int NX, const int NY, const int NZ
 );
 
+__global__ void movingWallBC(
+    float * __restrict__ f,
+    const float * __restrict__ rho,
+    const int NX, const int NY, const int NZ
+);
+
 #endif

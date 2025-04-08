@@ -1,7 +1,7 @@
 #include "var.cuh"
 
-int MESH = 128;
-int NX = MESH; int NY = MESH; int NZ = MESH;  
+int MESH = 64;
+int NX = MESH; int NY = MESH; int NZ = MESH*4;  
 
 __constant__ float CSSQ;
 __constant__ float OMEGA;

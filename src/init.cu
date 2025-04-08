@@ -36,12 +36,12 @@ __global__ void initPhase(
 
     int idx3D = inline3D(i,j,k,NX,NY);
 
-    float bubble_radius = 20.0f * NX / 150.0f;
+    float bubble_radius = 20.0f;
 
     float dx = i - NX * 0.5f;
     float dy = j - NY * 0.5f;
     float dz = k - NZ * 0.5f;
-    float Ri = sqrt((dx * dx) / 4.0f + dy * dy + dz * dz);
+    float Ri = sqrt(dx * dx + dy * dy + dz * dz);
 
     float phi_val = 0.5f + 0.5f * tanh(2.0f * (bubble_radius - Ri) / 3.0f);
 
